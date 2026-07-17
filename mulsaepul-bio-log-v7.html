@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>물새풀팀 · 비오의 탐사 기록지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<style>
+  :root{
+    --sky:#EAF4FC; --cream:#FBF7F0;
+    --water:#5AA9E6; --water-deep:#3E86C7; --leaf:#8FC66B; --leaf-deep:#6FA84C;
+    --sun:#F2B441; --earth:#C8A06A; --lilac:#B39DDB;
+    --ink:#3A4468; --navy:#2E3A59; --muted:#8A93AD; --pink:#F6ADC0;
+    --card:#FFFFFF; --line:#E9EEF6; --shadow:0 8px 22px rgba(90,120,170,.14);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Gowun Dodum',system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    color:var(--ink);background:linear-gradient(180deg,#EAF4FC 0%,#F4F9FE 30%,var(--cream) 100%);min-height:100vh;}
+  .app{max-width:660px;margin:0 auto;padding-bottom:100px;position:relative;}
+  .jua{font-family:'Jua',sans-serif;}
+  button{font-family:inherit;cursor:pointer;}
+  .hidden{display:none!important;}
+
+  /* 헤더 */
+  header{position:relative;padding:18px 20px 58px;background:linear-gradient(160deg,#CDE8FB,#E7F3FC 60%,#F1E9FA);overflow:hidden;}
+  .wave{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:36px;}
+  .team-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.75);border:2px solid #fff;
+    padding:5px 13px;border-radius:30px;font-size:12.5px;font-weight:700;color:var(--water-deep);box-shadow:0 3px 10px rgba(90,120,170,.12);}
+  .team-badge b{color:var(--leaf-deep);}
+  .hero{display:flex;gap:12px;align-items:center;margin-top:12px;position:relative;z-index:2;}
+  .hero-txt{flex:1;min-width:0;}
+  .hero-txt h1{font-family:'Jua',sans-serif;font-size:25px;margin:0 0 4px;color:var(--navy);line-height:1.18;letter-spacing:.5px;}
+  .hero-txt h1 span{color:var(--water-deep);}
+  .hero-txt p{margin:0;font-size:12px;color:#5B6a86;line-height:1.55;}
+  .bio-stage{position:relative;flex:none;width:118px;padding-top:20px;text-align:center;}
+  .speech{position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;background:#fff;border:2px solid #fff;
+    box-shadow:0 3px 9px rgba(90,120,170,.16);border-radius:16px;padding:4px 11px;font-size:10.5px;font-weight:700;color:var(--water-deep);z-index:3;}
+  .speech:after{content:'';position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff;}
+  .members{margin-top:11px;display:flex;gap:7px;}
+  .member{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.7);border-radius:20px;padding:4px 11px;font-size:12px;font-weight:700;color:var(--ink);}
+  .member .dot{width:8px;height:8px;border-radius:50%;}
+
+  /* 날씨 */
+  .weather-card{margin:-20px 16px 0;position:relative;z-index:5;background:var(--card);border-radius:22px;box-shadow:var(--shadow);padding:15px 17px;}
+  .site-tabs{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center;}
+  .site-btn{padding:7px 13px;border:2px solid var(--line);background:#fff;border-radius:16px;font-size:13px;font-weight:700;color:var(--muted);}
+  .site-btn.on{border-color:var(--water);background:var(--water);color:#fff;}
+  .who{display:flex;gap:5px;margin-left:auto;background:#F1F7FD;padding:3px;border-radius:16px;}
+  .who button{border:none;background:none;padding:5px 11px;border-radius:13px;font-size:12.5px;font-weight:700;color:var(--muted);}
+  .who button.on{background:#fff;color:var(--water-deep);box-shadow:0 2px 6px rgba(90,120,170,.15);}
+  .site-desc{font-size:11.5px;color:var(--muted);margin:6px 2px 12px;}
+  .wrow{display:flex;align-items:center;gap:14px;}
+  .w-emoji{font-size:44px;line-height:1;}
+  .w-temp{font-family:'Jua',sans-serif;font-size:34px;color:var(--navy);line-height:1;}
+  .w-temp small{font-size:15px;color:var(--muted);}
+  .w-cond{font-size:13px;font-weight:700;color:var(--water-deep);margin-top:2px;}
+  .w-refresh{margin-left:auto;background:#F1F7FD;border:none;border-radius:14px;width:40px;height:40px;color:var(--water-deep);font-size:17px;}
+  .wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px;padding-top:13px;border-top:2px dashed #E9F0F8;}
+  .wgrid div{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--muted);}
+  .wgrid b{font-size:14px;color:var(--ink);} .wgrid .ic{font-size:15px;}
+  .w-msg{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:9px;padding:6px 2px;}
+  .w-err{flex-direction:column;align-items:flex-start;gap:9px;color:#D98A5B;}
+
+  .view{padding:16px 16px 8px;}
+  .cats{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;}
+  .cat{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:62px;padding:11px 6px;border:2.5px solid var(--line);
+    background:#fff;border-radius:18px;font-size:12px;font-weight:700;color:var(--ink);}
+  .cat .ce{font-size:22px;} .cat small{color:var(--muted);font-size:9.5px;font-weight:600;}
+
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px;}
+  .card-title{display:flex;align-items:center;gap:8px;font-family:'Jua',sans-serif;font-size:15px;color:var(--navy);margin-bottom:13px;letter-spacing:.3px;}
+  .card-title .em{font-size:18px;} .card-title .r{margin-left:auto;font-family:'Gowun Dodum';font-size:11.5px;color:var(--muted);font-weight:400;}
+
+  .photo-drop{width:100%;border:3px dashed #C5DEF4;background:#F3F9FE;border-radius:18px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--water-deep);}
+  .photo-drop .big{font-size:30px;} .photo-drop b{color:var(--ink);font-size:15px;} .photo-drop small{color:var(--muted);font-size:11.5px;}
+  .photo-wrap{position:relative;border-radius:18px;overflow:hidden;}
+  .photo-wrap img{width:100%;max-height:280px;object-fit:cover;display:block;}
+  .photo-x{position:absolute;top:9px;right:9px;width:32px;height:32px;border:none;border-radius:50%;background:rgba(46,58,89,.6);color:#fff;font-size:17px;}
+
+  .ai-btn{width:100%;margin-top:12px;padding:13px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--water),var(--water-deep));
+    color:#fff;font-family:'Jua',sans-serif;font-size:15px;letter-spacing:.4px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 5px 14px rgba(62,134,199,.32);}
+  .ai-btn:disabled{opacity:.7;}
+  .ai-note{margin-top:11px;font-size:12.5px;line-height:1.55;background:#FDF3EA;color:#C77E4A;padding:10px 12px;border-radius:14px;}
+  .ai-res{margin-top:12px;background:#F1FAEF;border:2px solid #DBEFCF;border-radius:18px;padding:14px;}
+  .ai-res.dim{background:#F6F7FB;border-color:var(--line);}
+  .ai-top{display:flex;align-items:center;gap:9px;}
+  .ai-top b{font-family:'Jua',sans-serif;font-size:18px;color:var(--navy);}
+  .conf{font-size:11px;font-weight:700;color:#fff;padding:2px 10px;border-radius:20px;}
+  .c-높음{background:var(--leaf-deep);} .c-보통{background:var(--sun);} .c-낮음{background:#C0A38A;}
+  .ai-sci{font-size:12px;color:var(--muted);font-style:italic;margin:4px 0 8px;}
+  .ai-res p{margin:6px 0;font-size:13px;line-height:1.55;}
+  .ai-ind{background:#EAF5FB;color:#3E7CA6;padding:9px 11px;border-radius:12px;}
+  .dexlinks{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap;}
+  .dexlinks a{font-size:12px;font-weight:700;color:var(--water-deep);text-decoration:none;background:#EAF4FC;padding:6px 11px;border-radius:12px;}
+  .apply-btn{margin-top:9px;border:none;background:var(--leaf);color:#fff;border-radius:12px;padding:8px 14px;font-weight:700;font-size:12.5px;display:inline-flex;gap:5px;align-items:center;}
+  .disc{margin-top:10px;font-size:10.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px;}
+
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  .field input,.field textarea{width:100%;padding:11px 13px;border:2px solid var(--line);border-radius:14px;font-size:14px;font-family:inherit;background:#FBFCFE;}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--water);background:#fff;}
+  .field textarea{resize:vertical;}
+  .field.soga textarea{background:#FBF6FC;border-color:#EBDCF3;}
+  .pills{display:flex;gap:7px;flex-wrap:wrap;}
+  .pill{padding:8px 14px;border:2px solid var(--line);background:#fff;border-radius:18px;font-size:13px;color:var(--muted);font-weight:600;}
+  .pill.on{border-color:var(--water);background:var(--water);color:#fff;}
+  .depth-row{display:flex;gap:14px;align-items:stretch;}
+  .depth-row .field{flex:1;margin-bottom:0;}
+  .bio-mini{flex:none;width:74px;display:flex;flex-direction:column;align-items:center;}
+  .bio-mini small{font-size:10px;color:var(--muted);margin-top:2px;}
+  .biotope{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border:2.5px dashed #B7DDA6;background:#F2FAEE;border-radius:14px;font-size:13px;font-weight:700;color:var(--leaf-deep);}
+  .biotope.on{background:var(--leaf);color:#fff;border-style:solid;border-color:var(--leaf);}
+
+  .loc-actions{display:flex;gap:8px;margin-bottom:11px;}
+  .gps-btn{flex:1;padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg,#F4B84B,#EFA127);color:#fff;font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 4px 12px rgba(239,161,39,.3);}
+  .gps-btn:disabled{opacity:.7;}
+  #pickMap,#mapView{width:100%;border-radius:16px;overflow:hidden;background:#E7EEF5;}
+  #pickMap{height:190px;} #mapView{height:calc(100vh - 250px);min-height:340px;}
+  .loc-label{margin-top:9px;font-size:12px;color:var(--ink);background:#F3F9FE;border-radius:12px;padding:8px 11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .loc-label .tag{background:var(--leaf);color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;}
+  .loc-label .tag.manual{background:var(--muted);} .loc-label .tag.site{background:var(--water);}
+  .coord-in{display:flex;gap:8px;margin-top:9px;}
+  .coord-in label{flex:1;font-size:10.5px;color:var(--muted);display:flex;flex-direction:column;gap:3px;}
+  .coord-in input{padding:8px 10px;border:2px solid var(--line);border-radius:11px;font-size:12.5px;font-family:inherit;}
+  .gmaps-link{font-size:12px;color:var(--water-deep);font-weight:700;text-decoration:none;}
+
+  .save-btn{width:100%;padding:16px;border:none;border-radius:20px;background:linear-gradient(135deg,var(--leaf),var(--leaf-deep));color:#fff;
+    font-family:'Jua',sans-serif;font-size:17px;letter-spacing:.6px;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 6px 18px rgba(111,168,76,.35);}
+  .save-btn:disabled{background:#CBD5C4;box-shadow:none;}
+
+  /* 도감/사진전 */
+  .seg{display:flex;gap:6px;background:#EDF3FA;padding:4px;border-radius:16px;margin-bottom:14px;}
+  .seg button{flex:1;border:none;background:none;padding:9px;border-radius:12px;font-weight:700;font-size:13px;color:var(--muted);}
+  .seg button.on{background:#fff;color:var(--water-deep);box-shadow:0 2px 7px rgba(90,120,170,.15);}
+  .gal{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;}
+  .gcell{background:#fff;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);}
+  .gcell .gimg{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#EEF3F8;}
+  .gcell .gbody{padding:9px 10px;}
+  .gcell .gname{font-weight:700;font-size:13.5px;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .gcell .gmeta{font-size:10.5px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;}
+  .gcell .gwho{font-weight:700;}
+  .exhibit-btn{width:100%;margin-top:14px;padding:14px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--lilac),#9B86C9);color:#fff;font-family:'Jua';font-size:15px;letter-spacing:.4px;box-shadow:0 5px 14px rgba(155,134,201,.32);}
+
+  .refgroup{margin-bottom:16px;}
+  .refgroup h4{margin:0 0 9px;font-family:'Jua';font-size:14px;color:var(--navy);display:flex;align-items:center;gap:7px;}
+  .refitem{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:11px 13px;margin-bottom:8px;}
+  .refitem .rn{font-weight:700;font-size:14px;color:var(--navy);}
+  .refitem .rnote{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45;}
+  .refitem .ract{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+  .refitem .ract a{font-size:11.5px;font-weight:700;color:var(--water-deep);text-decoration:none;background:#EAF4FC;padding:5px 9px;border-radius:10px;}
+  .refitem .addref{font-size:11.5px;font-weight:700;color:#fff;background:var(--leaf);border:none;border-radius:10px;padding:5px 10px;}
+
+  /* 일지 */
+  .day-head{display:flex;align-items:baseline;gap:9px;margin:6px 2px 11px;}
+  .day-head b{font-family:'Jua',sans-serif;font-size:16px;color:var(--navy);} .day-head small{color:var(--muted);font-size:12px;}
+  .log{display:flex;gap:12px;background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:12px;margin-bottom:11px;}
+  .log img.thumb{width:90px;height:90px;object-fit:cover;border-radius:14px;flex:none;}
+  .log-b{flex:1;min-width:0;}
+  .log-top{display:flex;align-items:center;gap:8px;}
+  .tag{color:#fff;font-size:10.5px;font-weight:700;padding:2px 10px;border-radius:14px;flex:none;}
+  .log-top b{font-size:15px;color:var(--navy);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .del{border:none;background:none;color:#D3B7BE;font-size:15px;flex:none;padding:2px;}
+  .log-sci{font-size:11.5px;color:var(--muted);font-style:italic;margin-top:2px;}
+  .log-meta{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.5;}
+  .log-detail{font-size:12.5px;color:var(--water-deep);font-weight:700;margin-top:5px;}
+  .log-note{font-size:13.5px;margin-top:6px;line-height:1.5;}
+  .log-soga{font-size:12.5px;margin-top:6px;color:#8A6BA8;background:#FBF6FC;padding:7px 9px;border-radius:10px;line-height:1.5;}
+  .log-loc{font-size:11.5px;margin-top:6px;} .log-loc a{color:var(--sun);font-weight:700;text-decoration:none;}
+  .log-bio{display:inline-flex;gap:4px;align-items:center;font-size:11.5px;color:var(--leaf-deep);font-weight:700;margin-top:6px;}
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);} .empty p{line-height:1.7;font-size:14px;margin-top:6px;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .stat{background:#F6FAFE;border-radius:16px;padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .stat .se{font-size:20px;} .stat b{font-family:'Jua',sans-serif;font-size:22px;color:var(--navy);} .stat span{font-size:11px;color:var(--muted);}
+  .exp-btn{width:100%;display:flex;align-items:center;gap:13px;padding:14px;border:2px solid var(--line);background:#fff;border-radius:16px;margin-bottom:10px;text-align:left;color:var(--ink);}
+  .exp-btn .ee{font-size:22px;} .exp-btn b{display:block;font-size:14px;} .exp-btn small{color:var(--muted);font-size:11.5px;}
+  .exp-btn:disabled{opacity:.5;} .exp-desc{font-size:12.5px;color:var(--muted);margin:0 0 13px;line-height:1.55;}
+
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:660px;background:rgba(255,255,255,.94);
+    backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:40;}
+  .nav button{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--muted);font-size:10.5px;font-weight:700;position:relative;}
+  .nav button .ne{font-size:19px;} .nav button.on{color:var(--water-deep);}
+  .nav .cnt{position:absolute;top:0;right:22%;background:var(--pink);color:#fff;font-size:9px;font-weight:700;padding:0 5px;border-radius:9px;line-height:15px;}
+
+  .toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 22px;border-radius:24px;font-size:13.5px;font-weight:700;z-index:120;box-shadow:0 8px 22px rgba(0,0,0,.22);}
+  .zoom{position:fixed;inset:0;background:rgba(20,30,50,.92);display:flex;align-items:center;justify-content:center;z-index:130;padding:18px;flex-direction:column;}
+  .zoom img{max-width:100%;max-height:72%;border-radius:12px;}
+  .zoom .zmeta{color:#fff;text-align:center;margin-top:14px;max-width:420px;}
+  .zoom .zmeta b{font-family:'Jua';font-size:19px;} .zoom .zmeta .zsci{color:#B8C6DD;font-style:italic;font-size:13px;margin-top:2px;}
+  .zoom .zmeta p{font-size:13px;color:#DCE4EF;margin:8px 0;line-height:1.5;}
+  .zoom .dexlinks{justify-content:center;}
+  .foot{text-align:center;font-size:10.5px;color:var(--muted);padding:16px;line-height:1.7;}
+  .leaflet-popup-content{margin:10px 12px;font-family:'Gowun Dodum',sans-serif;}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+<style>
+/* ===== 귀엽·상큼·큰글씨 오버라이드 ===== */
+body{font-size:16px;background:
+ radial-gradient(1100px 420px at 6% -8%,#FFE1EE 0%,rgba(255,225,238,0) 55%),
+ radial-gradient(900px 400px at 106% 3%,#D8F6E6 0%,rgba(216,246,230,0) 55%),
+ radial-gradient(820px 520px at 50% 114%,#FFF0D4 0%,rgba(255,240,212,0) 60%),
+ linear-gradient(180deg,#E8F5FF 0%,#F3FAFF 42%,#FCF8F1 100%);background-attachment:fixed;}
+header{background:linear-gradient(160deg,#BCE6FF 0%,#D8F4E8 46%,#FCE1EE 100%);}
+.team-badge{font-size:13px;}
+.bio-stage{padding-top:28px;}
+.hero-txt h1{font-size:29px;line-height:1.16;}
+.hero-txt p{font-size:13px;}
+.member{font-size:13.5px;}
+.speech{font-family:'Gaegu',cursive;font-size:15px;font-weight:700;padding:5px 13px;}
+/* 통통 튀는 비오 */
+#bioHero{display:inline-block;transform-origin:bottom center;animation:bioBounce 2.1s ease-in-out infinite;}
+.empty svg{display:inline-block;transform-origin:bottom center;animation:bioBounce 2.6s ease-in-out infinite;}
+@keyframes bioBounce{
+ 0%{transform:translateY(0) scale(1,1)}
+ 16%{transform:translateY(-11px) scale(.97,1.04)}
+ 34%{transform:translateY(0) scale(1.04,.96)}
+ 52%{transform:translateY(-5px) scale(1,1)}
+ 70%{transform:translateY(0) scale(1.02,.99)}
+ 100%{transform:translateY(0) scale(1,1)}}
+/* 큰 글씨 */
+.site-btn{font-size:14.5px;padding:8px 15px;}
+.who button{font-size:13.5px;padding:6px 12px;}
+.site-desc{font-size:12.5px;}
+.w-emoji{font-size:48px;}
+.w-temp{font-size:40px;} .w-cond{font-size:14.5px;} .wgrid b{font-size:15px;} .wgrid div{font-size:11.5px;}
+.card{border:2px solid #fff;}
+.card-title{font-size:17px;}
+.cats{gap:9px;}
+.cat{font-size:13px;min-width:66px;} .cat .ce{font-size:26px;} .cat small{font-size:10.5px;}
+.field label{font-size:13.5px;} .field input,.field textarea{font-size:15.5px;padding:12px 14px;border-radius:15px;}
+.pill{font-size:14px;padding:9px 15px;}
+.biotope{font-size:14px;}
+.ai-btn{font-size:16.5px;} .save-btn{font-size:19px;padding:17px;border-radius:22px;box-shadow:0 8px 20px rgba(111,168,76,.4);}
+.gps-btn{font-size:14.5px;} .exhibit-btn{font-size:16px;}
+.log-top b{font-size:16px;} .log-note{font-size:14px;} .log-meta{font-size:12px;} .log-sci{font-size:12px;}
+.gcell .gname{font-size:14.5px;} .gcell .gmeta{font-size:11px;}
+.seg button{font-size:14.5px;padding:10px;}
+.refitem .rn{font-size:15px;} .refitem .rnote{font-size:12.5px;}
+.stat b{font-size:25px;} .stat span{font-size:11.5px;} .stat .se{font-size:22px;}
+.exp-btn b{font-size:15px;} .exp-btn small{font-size:12px;}
+.nav button{font-size:11.5px;} .nav button .ne{font-size:22px;} .nav button.on .ne{transform:scale(1.14);}
+.toast{font-size:14.5px;} .foot{font-size:11px;}
+/* 컬러 팝 */
+.weather-card{border:2px solid #fff;}
+.card-title .em{filter:drop-shadow(0 2px 2px rgba(0,0,0,.06));}
+/* 로그인 게이트 */
+#gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:22px;
+  background:radial-gradient(900px 460px at 50% -12%,#DDEFFF,transparent),linear-gradient(160deg,#CDE9FF,#DEF5EA 50%,#FCE3EF);}
+#gate.gone{display:none;}
+.gate-card{background:#fff;border-radius:28px;box-shadow:0 20px 50px rgba(60,90,140,.25);padding:24px 22px 22px;max-width:360px;width:100%;text-align:center;border:3px solid #fff;}
+.gate-card.shake{animation:shake .42s;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.gate-bio svg{display:inline-block;transform-origin:bottom center;animation:bioBounce 2s ease-in-out infinite;}
+.gate-title{font-family:'Jua';font-size:23px;color:var(--navy);margin:6px 0 2px;}
+.gate-sub{font-family:'Gaegu';font-size:15px;color:#5B7CA0;margin:0 0 16px;}
+.gate-seg{margin-bottom:14px;}
+.gate-names{display:flex;gap:8px;justify-content:center;margin-bottom:12px;flex-wrap:wrap;}
+.gate-name{border:2px solid var(--line);background:#fff;border-radius:16px;padding:9px 14px;font-weight:700;font-size:14.5px;color:var(--muted);}
+.gate-name.on{border-color:var(--water);background:var(--water);color:#fff;}
+.gate-pw{width:100%;padding:13px 15px;border:2px solid var(--line);border-radius:16px;font-size:18px;text-align:center;letter-spacing:6px;font-family:inherit;margin-bottom:12px;}
+.gate-pw:focus{outline:none;border-color:var(--water);}
+.gate-go{width:100%;padding:15px;border:none;border-radius:18px;background:linear-gradient(135deg,var(--water),var(--water-deep));color:#fff;font-family:'Jua';font-size:16.5px;box-shadow:0 6px 16px rgba(62,134,199,.35);}
+.gate-go.guest{background:linear-gradient(135deg,#9BD08C,var(--leaf-deep));box-shadow:0 6px 16px rgba(111,168,76,.32);}
+.gate-guestmsg{font-size:13px;color:var(--muted);line-height:1.55;margin:2px 0 14px;}
+.gate-msg{color:#E0698C;font-weight:700;font-size:13px;min-height:18px;margin-top:10px;font-family:'Gaegu';}
+/* 사용자 바 */
+.userbar{display:flex;align-items:center;gap:10px;margin:14px 16px 0;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:9px 14px;border:2px solid #fff;}
+.ub-who{font-weight:700;font-size:13.5px;color:var(--navy);}
+.ub-switch{margin-left:auto;border:2px solid var(--line);background:#fff;border-radius:12px;padding:6px 12px;font-weight:700;font-size:12.5px;color:var(--water-deep);}
+/* 비오 안내(칸마다 같이 탐구) */
+.guide{display:flex;align-items:center;gap:10px;background:linear-gradient(100deg,#EDF7FF,#F3FBF2);border:2px dashed #C9E6FA;border-radius:16px;padding:7px 12px 7px 7px;margin-bottom:13px;}
+.guide-bio{flex:none;} .guide-bio svg{display:block;transform-origin:bottom center;animation:bioBounce 2.5s ease-in-out infinite;}
+.guide-txt{font-family:'Gaegu',cursive;font-size:15.5px;font-weight:700;color:#3E7CA6;line-height:1.35;}
+.species-field input{border-color:#BFE0B4;background:#F6FBF3;}
+/* 팀 대시보드 */
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px;}
+.dash-cell{background:#F6FAFE;border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.dash-cell .dot{width:13px;height:13px;border-radius:50%;} .dash-cell .se{font-size:17px;}
+.dash-cell b{font-family:'Jua';font-size:23px;color:var(--navy);} .dash-cell span{font-size:11px;color:var(--muted);}
+.fchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px;}
+.fchip{border:2px solid var(--line);background:#fff;border-radius:16px;padding:7px 14px;font-weight:700;font-size:13.5px;color:var(--muted);}
+.fchip.on{border-color:var(--water);background:var(--water);color:#fff;}
+.dash-refresh{width:100%;border:2px solid #CDE7FA;background:#F3FAFF;border-radius:14px;padding:12px;font-weight:700;font-size:14px;color:var(--water-deep);}
+/* 더 화려하게 */
+.card-title{padding-bottom:8px;border-bottom:2px solid #F1F5FB;}
+.nav button.on{background:linear-gradient(180deg,#EAF5FF,#fff);border-radius:14px;}
+header:after{content:"";position:absolute;top:12px;left:14px;width:7px;height:7px;border-radius:50%;background:#FF9EC4;
+  box-shadow:44px 12px 0 #7ED9B0,120px -2px 0 #FFC861,300px 14px 0 #9AB8FF,250px 40px 0 #FF9EC4,80px 44px 0 #7ED9B0,340px 40px 0 #FFC861;opacity:.6;z-index:1;}
+/* 흐름 안내 + 정확한 위치 찍기 */
+.bio-stage{padding-top:6px;}
+.flowbar{background:linear-gradient(100deg,#EAF4FF,#F1FBF0);border:2px solid #fff;border-radius:16px;padding:11px 14px;margin-bottom:13px;font-size:12.5px;color:#4A5B7E;box-shadow:var(--shadow);line-height:1.5;}
+.flowbar b{color:var(--navy);font-family:'Jua';font-size:14px;}
+.loc-help{font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:11px;background:#F7FAFE;border-radius:12px;padding:10px 12px;}
+.loc-help b{color:var(--water-deep);}
+.pickwrap{position:relative;}
+#pickMap{height:230px;}
+.crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:30px;color:#E0567A;pointer-events:none;z-index:500;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 4px #fff;}
+.loc-set{flex:1;padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg,#F47FA6,#E0567A);color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(224,86,122,.3);}
+/* 촬영/앨범 버튼 */
+.pickbtns{display:flex;gap:8px;margin-top:12px;width:100%;}
+.pickbtn{flex:1;padding:12px 8px;border:none;border-radius:14px;font-weight:800;font-size:13.5px;color:#fff;}
+.pickbtn.cam{background:linear-gradient(135deg,var(--water),var(--water-deep));box-shadow:0 4px 12px rgba(62,134,199,.3);}
+.pickbtn.alb{background:linear-gradient(135deg,#9BD08C,var(--leaf-deep));box-shadow:0 4px 12px rgba(111,168,76,.28);}
+/* 도감 태그 & 개수 */
+.rtag{display:inline-block;margin-left:7px;font-size:10.5px;font-weight:700;color:#fff;border-radius:10px;padding:1px 8px;vertical-align:middle;}
+.rcount{font-family:'Gowun Dodum';font-size:11px;color:#fff;background:var(--water);border-radius:10px;padding:1px 8px;font-weight:700;}
+/* 탐사 지도 오버뷰 */
+#mapView{height:300px;}
+.mapsum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:11px;}
+.mapsum div{background:#F6FAFE;border-radius:12px;padding:9px 4px;text-align:center;}
+.mapsum b{display:block;font-family:'Jua';font-size:21px;color:var(--navy);} .mapsum span{font-size:10.5px;color:var(--muted);}
+.legend{display:flex;gap:11px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--muted);}
+.legend .lg{display:inline-flex;align-items:center;gap:4px;} .legend i{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.spotlist{margin-top:12px;max-height:360px;overflow:auto;}
+.spot{display:flex;align-items:center;gap:11px;padding:8px;border-radius:14px;border:2px solid var(--line);margin-bottom:8px;background:#fff;}
+.spot img{width:50px;height:50px;border-radius:11px;object-fit:cover;flex:none;}
+.spot .spe{width:50px;height:50px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:none;}
+.spot .spb{flex:1;min-width:0;} .spot .spb b{font-size:14.5px;color:var(--navy);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.spot .spb small{font-size:11px;color:var(--muted);} .spot .sgo{color:var(--water-deep);font-weight:700;font-size:13px;flex:none;}
+@media (prefers-reduced-motion:reduce){#bioHero,.empty svg,.guide-bio svg,.gate-bio svg{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="team-badge">🐦 물새풀팀 · <b>비오의 탐사 기록지</b></div>
+    <div class="hero">
+      <div class="hero-txt">
+        <h1 class="jua">위례 습지의 친구<br><span>비오</span>와 떠나요</h1>
+        <p>물·새(동물)·풀(식물)이 어우러진 습지에서<br>생물다양성을 찾아 기록하는 우리들의 수첩</p>
+        <div class="members">
+          <span class="member"><span class="dot" style="background:var(--water)"></span>현정</span>
+          <span class="member"><span class="dot" style="background:var(--leaf)"></span>영현</span>
+        </div>
+      </div>
+      <div class="bio-stage">
+        <div id="bioHero"></div>
+      </div>
+    </div>
+    <svg class="wave" viewBox="0 0 660 36" preserveAspectRatio="none"><path d="M0,18 Q110,36 220,20 T440,20 T660,18 L660,36 L0,36 Z" fill="#FBF7F0"/></svg>
+  </header>
+
+  <div class="weather-card">
+    <div class="site-tabs" id="siteTabs"></div>
+    <div class="site-desc" id="siteDesc"></div>
+    <div id="weatherBox"></div>
+  </div>
+
+  <div id="userbar" class="userbar"></div>
+  <div class="view" id="view"></div>
+</div>
+
+<nav class="nav" id="nav"></nav>
+<div id="overlay"></div>
+<div id="gate"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+/* ===== 데이터 ===== */
+const SITES=[
+  {id:"jangji",name:"장지천",desc:"송파·위례 · 기존 하천을 되살린 수변 구간",lat:37.4783,lon:127.1490},
+  {id:"changgok",name:"창곡천",desc:"성남·위례 · 역사수변공원 구간",lat:37.4705,lon:127.1405},
+];
+const WMO={0:["맑음","☀️"],1:["대체로 맑음","🌤️"],2:["구름 조금","⛅"],3:["흐림","☁️"],45:["안개","🌫️"],48:["짙은 안개","🌫️"],
+51:["약한 이슬비","🌦️"],53:["이슬비","🌦️"],55:["강한 이슬비","🌧️"],56:["어는 이슬비","🌧️"],57:["강한 어는 이슬비","🌧️"],
+61:["약한 비","🌦️"],63:["비","🌧️"],65:["강한 비","🌧️"],66:["어는 비","🌧️"],67:["강한 어는 비","🌧️"],
+71:["약한 눈","🌨️"],73:["눈","❄️"],75:["강한 눈","❄️"],77:["싸락눈","🌨️"],80:["약한 소나기","🌦️"],81:["소나기","🌧️"],82:["강한 소나기","⛈️"],
+85:["눈 소나기","🌨️"],86:["강한 눈 소나기","🌨️"],95:["뇌우","⛈️"],96:["뇌우·우박","⛈️"],99:["강한 뇌우·우박","⛈️"]};
+const wtext=c=>WMO[c]?WMO[c][0]:"알 수 없음", wicon=c=>WMO[c]?WMO[c][1]:"❓";
+const CATS={
+  water :{label:"물",  full:"수위·수질", emoji:"💧", color:"#5AA9E6"},
+  animal:{label:"새",  full:"새·동물",   emoji:"🐦", color:"#F2B441"},
+  plant :{label:"풀",  full:"식물",     emoji:"🌿", color:"#8FC66B"},
+  soil  :{label:"흙",  full:"토질",     emoji:"🪨", color:"#C8A06A"},
+  etc   :{label:"기타", full:"기타",     emoji:"✨", color:"#B39DDB"},
+};
+const CAT_ORDER=["water","animal","plant","soil","etc"];
+const WHO=["최영현","박현정","이정연"];
+const DEX_REF=[
+  {group:"새 · 조류",emoji:"🐦",items:[
+    {name:"흰뺨검둥오리",tag:"텃새",note:"연중 보이는 대표 오리. 수변에서 먹이 활동."},
+    {name:"청둥오리",tag:"겨울철새",note:"수컷은 초록빛 머리. 겨울에 무리로 찾아와요."},
+    {name:"쇠오리",tag:"겨울철새",note:"작은 오리. 얕은 물가에서 무리 생활."},
+    {name:"왜가리",note:"회색 대형 물새. 물가에 오래 서서 사냥."},
+    {name:"중대백로",note:"흰 몸의 큰 물새. 얕은 물에서 물고기 사냥."},
+    {name:"쇠백로",note:"작은 백로. 발가락이 노란색."},
+    {name:"해오라기",note:"목이 짧은 야행성 백로. 물가 나무에 앉아요."},
+    {name:"물총새",tag:"물총새",note:"파란 등·주황 배. 물에 다이빙해 물고기 사냥."},
+    {name:"붉은머리오목눈이",note:"‘뱁새’. 갈대밭에서 무리지어 삐-삐 울어요."},
+    {name:"노랑할미새",note:"꽁지를 까딱이며 물가를 걷는 새."},
+    {name:"직박구리",tag:"텃새",note:"도시·하천변에 아주 흔한 텃새."},
+    {name:"흰목물떼새",tag:"멸종위기Ⅱ",note:"자갈밭에 알을 낳는 물떼새. 보호종."}]},
+  {group:"물고기 · 어류",emoji:"🐟",items:[
+    {name:"피라미",tag:"우점종",note:"우리 하천에서 가장 흔한 물고기. 수컷은 혼인색."},
+    {name:"붕어",note:"흐린 물에도 잘 사는 잡식성 물고기."},
+    {name:"잉어",note:"몸집 큰 물고기. 입가에 수염 두 쌍."},
+    {name:"참붕어",note:"작고 납작한 물고기. 무리 생활."},
+    {name:"미꾸리",tag:"오염 내성",note:"진흙 바닥에 살며 오염에 비교적 강함."},
+    {name:"버들치",tag:"맑은물 지표",note:"맑고 찬 상류를 좋아하는 지표성 어류."},
+    {name:"몰개",note:"한국 고유종 계열의 작은 물고기."},
+    {name:"밀어",note:"돌에 붙어 사는 작은 바닥 물고기(망둑어류)."},
+    {name:"블루길",tag:"외래종",note:"북미 원산 외래종. 생태계 교란종이에요."},
+    {name:"배스",tag:"외래종",note:"큰입배스. 토종 물고기를 잡아먹는 교란종."}]},
+  {group:"수서곤충 · 무척추",emoji:"🦟",items:[
+    {name:"소금쟁이",note:"수면 위를 걷는 곤충. 표면장력을 이용해요."},
+    {name:"물잠자리",note:"금속빛 몸의 잠자리. 물가 풀에 앉아요."},
+    {name:"실잠자리",note:"가늘고 긴 잠자리. 여름 물가에 흔함."},
+    {name:"물방개",note:"물속을 헤엄치는 딱정벌레."},
+    {name:"장구애비·게아재비",note:"긴 숨관으로 숨 쉬는 물속 사냥꾼."},
+    {name:"다슬기",tag:"수질 양호",note:"돌에 붙는 고둥. 물이 깨끗할수록 많아요."},
+    {name:"강도래·날도래 유충",tag:"청정수 지표",note:"이 유충이 많으면 물이 아주 깨끗하다는 신호!"}]},
+  {group:"양서 · 파충류",emoji:"🐸",items:[
+    {name:"청개구리",note:"초록빛 작은 개구리. 비 오기 전 잘 울어요."},
+    {name:"참개구리",note:"논·물가에 흔한 개구리."},
+    {name:"두꺼비",note:"울퉁불퉁 피부. 봄에 물가로 산란하러 와요."},
+    {name:"북방산개구리",note:"이른 봄 가장 먼저 알을 낳는 개구리."},
+    {name:"맹꽁이",tag:"멸종위기Ⅱ",note:"장마철 ‘맹-꽁’ 울음. 보호종이에요."},
+    {name:"줄장지뱀",note:"몸에 줄무늬가 있는 작은 도마뱀."},
+    {name:"자라",note:"등이 부드러운 민물 거북."},
+    {name:"붉은귀거북",tag:"외래종",note:"방생된 외래 거북. 생태계 교란종."}]},
+  {group:"포유류",emoji:"🦡",items:[
+    {name:"너구리",note:"탄천 수계에 사는 야행성 포유류."},
+    {name:"족제비",note:"가늘고 긴 몸. 물가에서 사냥해요."},
+    {name:"고라니",note:"송곳니가 보이는 작은 사슴. 하천변에 출현."},
+    {name:"청설모",note:"나무를 타는 다람쥐과. 하천변 숲에 흔함."},
+    {name:"수달",tag:"멸종위기Ⅰ·천연기념물",note:"깨끗한 하천의 최상위 지표종. 발견하면 아주 귀해요!"}]},
+  {group:"풀 · 습지식물",emoji:"🌿",items:[
+    {name:"갈대",note:"습지 대표 식물. 물가에 큰 군락을 이뤄요."},
+    {name:"부들",note:"소시지 모양 이삭의 정수식물."},
+    {name:"물억새",note:"물가·둔치에 자라는 억새류."},
+    {name:"달뿌리풀",note:"하천변에 흔한 벼과 식물."},
+    {name:"고마리",tag:"정화식물",note:"물가에 흔하며 수질 정화에 기여."},
+    {name:"미나리",tag:"정화식물",note:"습지·도랑에 자라는 정화성 수생식물."},
+    {name:"부처꽃",note:"여름에 보라색 꽃이 피는 습지식물."},
+    {name:"물봉선",note:"물가 그늘에 피는 붉은보라 꽃."},
+    {name:"갯버들",note:"하천변에 자라는 버들. 봄에 버들강아지."}]},
+];
+
+/* ===== 상태 ===== */
+const state={tab:"record",auth:null,readonly:false,filterWho:null,loginMode:"editor",loginName:"최영현",loginPw:"",site:SITES[0],weather:null,wState:"idle",wErr:"",
+  category:"water",who:"현정",observations:[],loaded:false,
+  photo:null,aiState:"idle",aiRes:null,draftLoc:null,
+  dexTab:"gallery", qPhoto:null,qAiState:"idle",qAiRes:null,qSpecies:"",qCat:"animal",qNote:"",
+  pickMap:null,pickMarker:null,viewMap:null};
+let draft=emptyDraft();
+function emptyDraft(){return{depth:"",turbidity:"",watertemp:"",flow:"",species:"",count:"",position:"",behavior:"",soiltype:"",soilcolor:"",soilmoist:"",title:"",note:"",reflection:"",biotope:false};}
+
+/* ===== 저장소 ===== */
+const mem={};
+const store={
+  async set(k,v,sh=false){try{if(window.storage){await window.storage.set(k,JSON.stringify(v),sh);return;}}catch(e){} mem[k]=v;},
+  async get(k,sh=false){try{if(window.storage){const r=await window.storage.get(k,sh);return r?JSON.parse(r.value):null;}}catch(e){return mem[k]??null;} return mem[k]??null;},
+  async del(k,sh=false){try{if(window.storage){await window.storage.delete(k,sh);return;}}catch(e){} delete mem[k];},
+  async list(p,sh=false){try{if(window.storage){const r=await window.storage.list(p,sh);return(r&&r.keys)||[];}}catch(e){} return Object.keys(mem).filter(k=>k.startsWith(p));},
+};
+
+/* ===== 비오 마스코트 ===== */
+function bioSVG(level=0.6,mood="happy",size=100,idn="h",deco=false){
+  const wt=Math.max(128,Math.min(210,214-level*95));
+  const mouth=mood==="happy"?"M100,124 Q112,135 124,124":mood==="sad"?"M100,132 Q112,122 124,132":"M102,126 Q112,132 122,126";
+  const body="M112,42 C138,42 156,60 162,86 C168,112 176,150 182,178 C187,198 172,214 148,216 C136,217 88,217 76,216 C52,214 37,198 42,178 C48,150 56,112 62,86 C68,60 86,42 112,42 Z";
+  const heart=deco?`<path d="M200,110 c-3.4,-6 -12,-2.5 -12,4 c0,5.5 8.6,10 12,13 c3.4,-3 12,-7.5 12,-13 c0,-6.5 -8.6,-10 -12,-4 Z" fill="#8FC7F0"/>`:"";
+  const drops=deco?`<g fill="#8FC7F0"><path d="M18,150 c-5,7.5 -5,12.5 0,12.5 c5,0 5,-5 0,-12.5 Z"/><path d="M10,182 c-4,6 -4,10 0,10 c4,0 4,-4 0,-10 Z"/><path d="M26,198 c-4,6 -4,10 0,10 c4,0 4,-4 0,-10 Z"/></g>`:"";
+  const fish=level>0.4?`<g opacity=".5"><path d="M98,${wt+38} q11,-7 22,0 q-11,7 -22,0 Z" fill="#EAF6FF"/><path d="M120,${wt+38} l8,-5 v10 z" fill="#EAF6FF"/></g>`:"";
+  return `<svg width="${size}" height="${size*1.14}" viewBox="0 0 224 252" aria-label="비오">
+    <defs><clipPath id="clip${idn}"><path d="${body}"/></clipPath>
+    <linearGradient id="wg${idn}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9AD0F2"/><stop offset="1" stop-color="#5199D8"/></linearGradient></defs>
+    ${heart}${drops}
+    <ellipse cx="112" cy="230" rx="66" ry="11" fill="#B9CFE4" opacity=".35"/>
+    <path d="${body}" fill="#FDFEFF" stroke="#2E3A59" stroke-width="5" stroke-linejoin="round"/>
+    <g clip-path="url(#clip${idn})">
+      <path d="M30,${wt} Q72,${wt-12} 112,${wt} T196,${wt} L196,220 L30,220 Z" fill="url(#wg${idn})"/>
+      <path d="M30,${wt+6} Q72,${wt-4} 112,${wt+6} T196,${wt+6}" fill="none" stroke="#CFEDFC" stroke-width="3" opacity=".85"/>
+      ${fish}
+      <path d="M152,${wt+28} l2.4,4.8 l4.8,2.4 l-4.8,2.4 l-2.4,4.8 l-2.4,-4.8 l-4.8,-2.4 l4.8,-2.4 z" fill="#fff" opacity=".9"/>
+      <path d="M76,${wt+50} l1.8,3.6 l3.6,1.8 l-3.6,1.8 l-1.8,3.6 l-1.8,-3.6 l-3.6,-1.8 l3.6,-1.8 z" fill="#fff" opacity=".8"/></g>
+    <path d="${body}" fill="none" stroke="#2E3A59" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M112,44 C112,30 114,22 120,15" fill="none" stroke="#7FB05A" stroke-width="5" stroke-linecap="round"/>
+    <path d="M112,30 C94,20 76,25 73,40 C88,45 106,40 112,30 Z" fill="#A6CE7E" stroke="#6B9A46" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M118,24 C129,10 147,12 151,25 C137,33 120,31 118,24 Z" fill="#93C267" stroke="#6B9A46" stroke-width="2.6" stroke-linejoin="round"/>
+    <ellipse cx="96" cy="108" rx="7.2" ry="8.6" fill="#20293F"/><ellipse cx="128" cy="108" rx="7.2" ry="8.6" fill="#20293F"/>
+    <circle cx="93.4" cy="104.4" r="2.4" fill="#fff"/><circle cx="125.4" cy="104.4" r="2.4" fill="#fff"/>
+    <ellipse cx="76" cy="126" rx="10.5" ry="6.8" fill="#F3A9B8" opacity=".9"/><ellipse cx="148" cy="126" rx="10.5" ry="6.8" fill="#F3A9B8" opacity=".9"/>
+    <path d="${mouth}" fill="none" stroke="#2E3A59" stroke-width="3.8" stroke-linecap="round"/></svg>`;
+}
+function bioState(){let level=0.62,mood="happy";
+  const lw=state.observations.find(o=>o.category==="water"&&o.fields.depth);
+  if(lw)level=clamp(Number(lw.fields.depth)/60,.14,1);
+  if(state.weather){const c=state.weather.weather_code,p=state.weather.precipitation;
+    if(p>0||(c>=51&&c<=99)){mood="happy";if(!lw)level=.82;} else if(c===0||c===1){mood="neutral";if(!lw)level=.5;}}
+  return{level,mood};}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ===== 날씨 ===== */
+async function fetchWeather(lat,lon){
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code&timezone=Asia%2FSeoul`;
+  const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),8000);
+  try{const r=await fetch(url,{signal:ctrl.signal});clearTimeout(t);if(!r.ok)throw new Error("응답 "+r.status);
+    const d=await r.json();if(!d.current)throw new Error("형식");return d.current;}catch(e){clearTimeout(t);throw e;}}
+async function loadWeather(){const s=state.site;state.wState="loading";renderWeather();
+  try{state.weather=await fetchWeather(s.lat,s.lon);state.wState="ok";}
+  catch(e){state.wState="error";state.wErr=e.name==="AbortError"?"날씨 서버가 8초 안에 답하지 않았어요. 네트워크를 확인하고 다시 시도해요.":"날씨를 불러오지 못했어요. 잠시 후 다시 시도해요.";}
+  renderWeather();renderHeroBio();}
+
+/* ===== 사진 & AI ===== */
+function processImage(file,maxDim=1024,q=.82){return new Promise((res,rej)=>{const rd=new FileReader();
+  rd.onload=e=>{const img=new Image();img.onload=()=>{let{width:w,height:h}=img;
+    if(w>h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}else if(h>=w&&h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);res(c.toDataURL("image/jpeg",q));};
+    img.onerror=rej;img.src=e.target.result;};rd.onerror=rej;rd.readAsDataURL(file);});}
+async function identifySpecies(dataUrl,cat){
+  const b64=dataUrl.split(",")[1];
+  const hint=cat==="plant"?"식물(수변식물·습지식물·초본·목본)":cat==="animal"?"동물(어류·양서류·곤충·조류·저서생물)":"생물";
+  const prompt=`당신은 한국 도시하천 생태계 전문 생물 분류학자입니다.
+이 사진은 위례 장지천/창곡천(남한산성 수계, 탄천 유입) 습지 현장에서 촬영한 ${hint} 표본입니다.
+사진 속 생물을 한국에서 실제 관찰 가능한 종 기준으로 식별하세요.
+반드시 아래 JSON 형식으로만 답하세요(마크다운·코드펜스·설명 없이 JSON만):
+{"identified":true/false,"common_name":"국명","scientific_name":"학명","group":"식물|곤충|어류|양서류|파충류|조류|포유류|저서무척추동물|기타","confidence":"높음|보통|낮음","features":"사진 속 식별 근거·형태 특징 2~3문장","similar":"혼동 유사종(없으면 빈칸)","indicator":"이 종의 수질/환경 지표성이나 하천 생태에서의 의미 1~2문장"}
+식별이 어려우면 identified를 false로 두고 후보와 필요한 추가 사진 각도를 features에 적으세요.`;
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[
+      {type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]})});
+  if(!r.ok)throw new Error("AI "+r.status);
+  const d=await r.json();const txt=(d.content||[]).map(i=>i.type==="text"?i.text:"").join("\n");
+  const clean=txt.replace(/```json/gi,"").replace(/```/g,"").trim();
+  try{return JSON.parse(clean);}catch(e){return{identified:false,common_name:"",scientific_name:"",group:"",confidence:"낮음",features:clean.slice(0,300),similar:"",indicator:""};}}
+function dexLinksHTML(name){if(!name)return"";const q=encodeURIComponent(name);
+  return `<div class="dexlinks"><a href="https://search.naver.com/search.naver?query=${q}" target="_blank" rel="noopener">📖 네이버 검색</a>
+    <a href="https://www.google.com/search?tbm=isch&q=${q}" target="_blank" rel="noopener">🖼️ 이미지 비교</a></div>`;}
+
+/* ===== 위치 ===== */
+function siteLoc(){return{lat:+state.site.lat.toFixed(6),lon:+state.site.lon.toFixed(6),accuracy:null,source:"site",siteName:state.site.name};}
+function setDraftLoc(lat,lon,acc,src){state.draftLoc={lat:+lat.toFixed(6),lon:+lon.toFixed(6),accuracy:acc?Math.round(acc):null,source:src,siteName:state.site.name};
+  const la=document.getElementById("latIn"),lo=document.getElementById("lonIn");if(la)la.value=state.draftLoc.lat;if(lo)lo.value=state.draftLoc.lon;
+  if(state.pickMarker)state.pickMarker.setLatLng([lat,lon]);
+  if(state.pickMap)state.pickMap.setView([lat,lon],Math.max(state.pickMap.getZoom(),16));renderLocLabel();}
+function captureGPS(){const btn=document.getElementById("gpsBtn");
+  if(!navigator.geolocation){toast("이 기기는 위치 기능을 지원하지 않아요");return;}
+  if(btn){btn.disabled=true;btn.innerHTML="📡 위치 찾는 중…";}
+  navigator.geolocation.getCurrentPosition(
+    p=>{setDraftLoc(p.coords.latitude,p.coords.longitude,p.coords.accuracy,"gps");toast("현재 위치를 기록했어요 📍");if(btn){btn.disabled=false;btn.innerHTML="📍 현재 위치(GPS)";}},
+    e=>{toast("위치 권한이 없어요. 지도를 탭하거나 좌표를 입력해요.");if(btn){btn.disabled=false;btn.innerHTML="📍 현재 위치(GPS)";}},
+    {enableHighAccuracy:true,timeout:10000,maximumAge:0});}
+function renderLocLabel(){const el=document.getElementById("locLabel");if(!el)return;const L=state.draftLoc;
+  if(!L){el.innerHTML=`<span style="color:var(--muted)">위치가 아직 지정되지 않았어요.</span>`;return;}
+  const src=L.source==="gps"?"GPS로 지정됨":L.source==="site"?state.site.name+" 근처":"지도에서 지정됨";
+  el.innerHTML=`<span class="tag">📍 ${esc(src)}</span><span>이 자리를 저장할게요</span>
+    <a class="gmaps-link" href="https://www.google.com/maps?q=${L.lat},${L.lon}" target="_blank" rel="noopener">지도로 보기 ↗</a>`;}
+
+/* ===== 유틸 ===== */
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const dayKey=ts=>new Date(ts).toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
+const hhmm=ts=>new Date(ts).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"});
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+const whoDot=w=>w==="최영현"?"var(--water)":w==="박현정"?"var(--leaf)":"var(--sun)";
+let gid=0;
+function bioGuide(t){return `<div class="guide"><span class="guide-bio">${bioSVG(.62,"happy",46,"gd"+(gid++),false)}</span><span class="guide-txt">${t}</span></div>`;}
+function catGuide(c){return c==="water"?"물이 얼마나 차 있어? 나처럼 채워줘! 💧":c==="plant"?"어떤 풀·꽃을 만났어? 🌿":c==="animal"?"무슨 친구를 봤어? 새·물고기·곤충! 🐦":c==="soil"?"흙은 어떤 느낌이야? 만져봐! 🪨":"무엇을 발견했는지 알려줘! ✨";}
+
+/* ===== 헤더/날씨/탭 ===== */
+function renderHeroBio(){const{level,mood}=bioState();document.getElementById("bioHero").innerHTML=bioSVG(level,mood,116,"h",true);}
+function renderSiteTabs(){
+  document.getElementById("siteTabs").innerHTML=
+    SITES.map(s=>`<button class="site-btn ${state.site.id===s.id?'on':''}" data-site="${s.id}">${s.name}</button>`).join("")
+    +`<div class="who" id="whoSel">${WHO.map(w=>`<button data-who="${w}" class="${state.who===w?'on':''}">${w}</button>`).join("")}</div>`;
+  document.getElementById("siteDesc").textContent=`${state.site.desc} · ${state.site.lat}, ${state.site.lon}`;
+  document.querySelectorAll("[data-site]").forEach(b=>b.onclick=()=>{
+    state.site=SITES.find(s=>s.id===b.dataset.site);
+    if(!state.draftLoc||state.draftLoc.source==="site")state.draftLoc=siteLoc();
+    renderSiteTabs();loadWeather();if(state.tab==="record")renderView();});
+  document.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{state.who=b.dataset.who;store.set("wsp_meta",{who:state.who});renderSiteTabs();});
+}
+function renderWeather(){const b=document.getElementById("weatherBox"),w=state.weather;
+  if(state.wState==="loading"){b.innerHTML=`<div class="w-msg">⏳ 비오의 오늘 날씨를 불러오는 중…</div>`;return;}
+  if(state.wState==="error"){b.innerHTML=`<div class="w-msg w-err"><div>${esc(state.wErr)}</div><button class="site-btn on" id="wretry">🔄 다시 시도</button></div>`;document.getElementById("wretry").onclick=loadWeather;return;}
+  if(state.wState==="ok"&&w){b.innerHTML=`
+    <div class="wrow"><span class="w-emoji">${wicon(w.weather_code)}</span>
+      <div><div class="w-temp">${Math.round(w.temperature_2m)}<small>℃</small></div><div class="w-cond">${wtext(w.weather_code)}</div></div>
+      <button class="w-refresh" id="wref">🔄</button></div>
+    <div class="wgrid"><div><span class="ic">💧</span><span>습도</span><b>${w.relative_humidity_2m}%</b></div>
+      <div><span class="ic">🌧️</span><span>강수</span><b>${w.precipitation}mm</b></div>
+      <div><span class="ic">🍃</span><span>풍속</span><b>${w.wind_speed_10m}</b></div>
+      <div><span class="ic">🕒</span><span>기준</span><b>KST</b></div></div>`;document.getElementById("wref").onclick=loadWeather;return;}
+  b.innerHTML="";}
+function renderNav(){let items=[["record","📝","기록"],["dex","🖼️","도감"],["log","📖","일지"],["map","🗺️","지도"],["export","📤","내보내기"]];
+  if(state.readonly)items=items.filter(i=>i[0]!=="record");
+  document.getElementById("nav").innerHTML=items.map(([id,e,l])=>`<button class="${state.tab===id?'on':''}" data-tab="${id}"><span class="ne">${e}</span>${l}${id==="log"&&state.observations.length?`<span class="cnt">${state.observations.length}</span>`:""}</button>`).join("");
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;renderView();renderNav();window.scrollTo({top:0,behavior:"smooth"});});}
+
+/* ===== 뷰 라우팅 ===== */
+function destroyMaps(){if(state.pickMap){state.pickMap.remove();state.pickMap=null;state.pickMarker=null;}if(state.viewMap){state.viewMap.remove();state.viewMap=null;}}
+function renderView(){destroyMaps();if(state.readonly&&state.tab==="record")state.tab="dex";const v=document.getElementById("view");
+  if(state.tab==="record"){if(!state.draftLoc)state.draftLoc=siteLoc();v.innerHTML=recordView();wireRecord();setTimeout(initPickMap,30);}
+  else if(state.tab==="dex"){v.innerHTML=dexView();wireDex();wireZoom();}
+  else if(state.tab==="log"){v.innerHTML=logView();wireZoom();wireLog();}
+  else if(state.tab==="map"){v.innerHTML=mapView();setTimeout(initViewMap,30);}
+  else if(state.tab==="export"){v.innerHTML=exportView();wireExport();}}
+
+/* ===== 기록 뷰 ===== */
+function recordView(){return `
+  <div class="flowbar">🧭 <b>탐구 흐름</b> &nbsp;1 사진·종 › 2 위치 › 3 관찰 › 4 소감 › 💾 저장</div>
+  <div class="cats">${CAT_ORDER.map(c=>{const on=state.category===c;return `<button class="cat" data-cat="${c}" style="border-color:${CATS[c].color}${on?'':'55'};background:${CATS[c].color}${on?'2b':'12'}">
+     <span class="ce">${CATS[c].emoji}</span>${CATS[c].label}<small>${CATS[c].full}</small></button>`;}).join("")}</div>
+  <div class="card"><div class="card-title"><span class="em">1️⃣</span> 사진 찍고 AI로 종 찾기<span class="r">촬영: ${state.who}</span></div>
+    ${bioGuide("여기 사진을 올려줘! 내가 종을 같이 찾아줄게 🔎")}
+    <div id="photoArea">${photoArea()}</div>
+    <input type="file" id="fileIn" accept="image/*" capture="environment" class="hidden">
+    <input type="file" id="fileInGal" accept="image/*" class="hidden">
+    <div id="aiArea">${aiArea()}</div>
+    <div id="speciesArea">${speciesArea()}</div></div>
+  <div class="card"><div class="card-title"><span class="em">2️⃣</span> 발견 위치 콕 찍기<span class="r">${state.site.name}</span></div>
+    ${bioGuide("생물을 만난 자리를 지도에서 정확히 찍어줘 📍")}
+    <div class="loc-help">지도를 움직여 가운데 <b>분홍 십자(✛)</b>를 발견 장소에 딱 맞춘 뒤 <b>‘이 위치로 지정’</b>을 눌러요.<br>지도를 <b>톡 탭</b>하거나 핀을 <b>끌어서</b> 옮겨도 돼요.</div>
+    <div class="pickwrap"><div id="pickMap"></div><div class="crosshair">✛</div></div>
+    <div class="loc-actions">
+      <button class="loc-set" id="setCenterBtn">📍 이 위치로 지정</button>
+      <button class="gps-btn" id="gpsBtn">🛰️ 현재 위치(GPS)</button></div>
+    <div class="loc-label" id="locLabel"></div></div>
+  <div class="card"><div class="card-title" style="color:${CATS[state.category].color}"><span class="em">3️⃣</span> ${CATS[state.category].full} 관찰</div>
+    ${bioGuide(catGuide(state.category))}
+    <div id="fieldsArea">${fieldsArea()}</div>
+    <div class="field" style="margin-bottom:0;margin-top:13px"><label>메모 (관찰 내용)</label><textarea id="f_note" rows="2" placeholder="무엇을, 어디서, 어떻게 관찰했는지 적어요">${esc(draft.note)}</textarea></div></div>
+  <div class="card"><div class="card-title"><span class="em">4️⃣</span> 오늘의 소감 · 느낀 점</div>
+    ${bioGuide("오늘 탐사 어땠어? 나한테 살짝 얘기해줘 💛")}
+    <div class="field soga" style="margin-bottom:0"><textarea id="f_soga" rows="3" placeholder="느낀 점, 새롭게 알게 된 것, 비오에게 하고 싶은 말을 적어요">${esc(draft.reflection)}</textarea></div></div>
+  <button class="save-btn" id="saveBtn">💾 이 기록 저장하기</button>
+  <div class="foot">저장하면 팀원 모두의 ‘일지·지도’에 함께 쌓여요 · Open-Meteo 날씨 · OpenStreetMap 지도</div>`;}
+function speciesArea(){const c=state.category;if(c==="water"||c==="soil")return"";
+  return `<div class="field species-field" style="margin:13px 0 0"><label>🔎 종 이름 · AI가 찾은 이름 (직접 수정 가능)</label>
+    <input id="f_species" placeholder="사진을 찍고 ‘AI로 종 찾기’를 누르면 자동으로 채워져요" value="${esc(draft.species)}"></div>`;}
+function photoArea(){if(!state.photo)return `<div class="photo-drop"><span class="big">📸</span><b>생물 사진 올리기</b>
+    <div class="pickbtns"><button class="pickbtn cam" id="pickCam">📷 사진 찍기</button><button class="pickbtn alb" id="pickAlb">🖼️ 앨범에서 고르기</button></div></div>`;
+  return `<div class="photo-wrap"><img src="${state.photo}" data-zoom="${state.photo}"><button class="photo-x" id="rmPhoto">✕</button></div>`;}
+function aiArea(){if(!state.photo)return"";
+  let h=`<button class="ai-btn" id="aiBtn" ${state.aiState==='loading'?'disabled':''}>${state.aiState==='loading'?'🔎 종을 분석하는 중…':'🔎 AI로 종 자동 찾기'}</button>`;
+  if(state.aiState==="error")h+=`<div class="ai-note">AI 종 찾기는 Claude 앱 안에서 동작해요. 종 이름은 직접 적을 수 있어요 🙂</div>`;
+  if(state.aiState==="ok"&&state.aiRes){const r=state.aiRes;h+=`<div class="ai-res ${r.identified?'':'dim'}">`;
+    if(r.identified){h+=`<div class="ai-top"><b>${esc(r.common_name)}</b><span class="conf c-${r.confidence}">${esc(r.confidence)}</span></div>`;
+      if(r.scientific_name)h+=`<div class="ai-sci">${esc(r.scientific_name)} · ${esc(r.group)}</div>`;
+      if(r.features)h+=`<p>${esc(r.features)}</p>`;if(r.similar)h+=`<p style="color:#C77E4A">혼동 주의: ${esc(r.similar)}</p>`;
+      if(r.indicator)h+=`<p class="ai-ind">🌊 ${esc(r.indicator)}</p>`;h+=dexLinksHTML(r.common_name);h+=`<button class="apply-btn" id="applySpecies">✓ 종 이름으로 넣기</button>`;}
+    else h+=`<b>정확한 식별이 어려워요</b><p>${esc(r.features)}</p>`;
+    h+=`<div class="disc">AI 추정 결과예요. 도감으로 꼭 교차 확인해요!</div></div>`;}
+  return h;}
+function selectHTML(id,val,opts){return `<div class="pills">${opts.map(o=>`<button type="button" class="pill ${val===o?'on':''}" data-sel="${id}" data-val="${o}">${o}</button>`).join("")}</div>`;}
+function fieldsArea(){const c=state.category;
+  if(c==="water"){const lvl=clamp(Number(draft.depth||0)/60,.05,1);
+    return `<div class="depth-row"><div class="field"><label>수심 (cm)</label><input id="f_depth" type="number" inputmode="decimal" placeholder="예: 24" value="${esc(draft.depth)}"></div>
+      <div class="bio-mini">${bioSVG(lvl,"neutral",60,"d")}<small>비오의 수위</small></div></div>
+      <div class="field"><label>물색 / 탁도</label>${selectHTML("turbidity",draft.turbidity,["맑음","약간 흐림","흐림","매우 탁함"])}</div>
+      <div class="field"><label>수온 (℃)</label><input id="f_watertemp" type="number" inputmode="decimal" placeholder="예: 18.5" value="${esc(draft.watertemp)}"></div>
+      <div class="field" style="margin-bottom:0"><label>유속</label>${selectHTML("flow",draft.flow,["정체","느림","보통","빠름"])}</div>`;}
+  if(c==="plant"||c==="animal")return `<div class="field"><label>개체수 / 규모</label><input id="f_count" placeholder="${c==='plant'?'예: 소군락, 약 15개체':'예: 3마리'}" value="${esc(draft.count)}"></div>
+    ${c==='plant'?`<div class="field"><label>관찰 위치</label>${selectHTML("position",draft.position,["수중","수변부","둔치","제방","기타"])}</div>`:`<div class="field"><label>행동 / 상태</label><input id="f_behavior" placeholder="예: 수면 유영, 돌 밑 은신" value="${esc(draft.behavior)}"></div>`}
+    <button type="button" class="biotope ${draft.biotope?'on':''}" id="bioToggle">🌱 학교 비오톱 후보종으로 표시 ${draft.biotope?'✓':''}</button>`;
+  if(c==="soil")return `<div class="field"><label>토양 종류</label>${selectHTML("soiltype",draft.soiltype,["모래","진흙","자갈","부식토","혼합"])}</div>
+    <div class="field"><label>토양 색</label><input id="f_soilcolor" placeholder="예: 짙은 갈색" value="${esc(draft.soilcolor)}"></div>
+    <div class="field" style="margin-bottom:0"><label>습도</label>${selectHTML("soilmoist",draft.soilmoist,["건조","보통","습함","젖음"])}</div>`;
+  return `<div class="field"><label>제목</label><input id="f_title" placeholder="관찰 대상 / 현상" value="${esc(draft.title)}"></div>
+    <button type="button" class="biotope ${draft.biotope?'on':''}" id="bioToggle">🌱 비오톱 후보로 표시 ${draft.biotope?'✓':''}</button>`;}
+function wireRecord(){
+  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;draft=emptyDraft();state.photo=null;state.aiRes=null;state.aiState="idle";renderView();});
+  wirePickButtons();
+  const onPhoto=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{state.photo=await processImage(f);state.aiState="idle";state.aiRes=null;refreshPhotoAI();}catch(_){toast("사진을 불러오지 못했어요");}e.target.value="";};
+  document.getElementById("fileIn").onchange=onPhoto;document.getElementById("fileInGal").onchange=onPhoto;
+  wireAI();wireFields();
+  document.getElementById("gpsBtn").onclick=captureGPS;
+  const sc=document.getElementById("setCenterBtn");if(sc)sc.onclick=()=>{if(state.pickMap){const c=state.pickMap.getCenter();setDraftLoc(c.lat,c.lng,null,"manual");toast("지도 가운데 위치로 지정했어요 📍");}else toast("지도를 불러오지 못했어요.");};
+  document.getElementById("f_note").oninput=e=>draft.note=e.target.value;
+  document.getElementById("f_soga").oninput=e=>draft.reflection=e.target.value;
+  document.getElementById("saveBtn").onclick=saveObservation;renderLocLabel();}
+function refreshPhotoAI(){document.getElementById("photoArea").innerHTML=photoArea();document.getElementById("aiArea").innerHTML=aiArea();
+  wirePickButtons();wireAI();wireZoom();}
+function wirePickButtons(){const c=document.getElementById("pickCam");if(c)c.onclick=()=>document.getElementById("fileIn").click();
+  const a=document.getElementById("pickAlb");if(a)a.onclick=()=>document.getElementById("fileInGal").click();
+  const rm=document.getElementById("rmPhoto");if(rm)rm.onclick=()=>{state.photo=null;state.aiRes=null;state.aiState="idle";refreshPhotoAI();};}
+function wireAI(){const b=document.getElementById("aiBtn");
+  if(b)b.onclick=async()=>{if(!state.photo)return;state.aiState="loading";refreshPhotoAI();
+    try{const r=await identifySpecies(state.photo,state.category);state.aiRes=r;state.aiState="ok";if(r.identified&&r.common_name&&!draft.species)draft.species=r.common_name;}
+    catch(e){state.aiState="error";}refreshPhotoAI();syncSpecies();};
+  const ap=document.getElementById("applySpecies");if(ap)ap.onclick=()=>{draft.species=state.aiRes.common_name;syncSpecies();toast("종 이름을 넣었어요 ✓");};}
+function syncSpecies(){const sp=document.getElementById("f_species");if(sp)sp.value=draft.species;}
+function wireFields(){[["f_depth","depth"],["f_watertemp","watertemp"],["f_species","species"],["f_count","count"],["f_behavior","behavior"],["f_soilcolor","soilcolor"],["f_title","title"]]
+    .forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.oninput=e=>{draft[k]=e.target.value;if(k==="depth")updateDepthBio();};});
+  document.querySelectorAll("[data-sel]").forEach(b=>b.onclick=()=>{const k=b.dataset.sel;draft[k]=draft[k]===b.dataset.val?"":b.dataset.val;document.getElementById("fieldsArea").innerHTML=fieldsArea();wireFields();});
+  const bt=document.getElementById("bioToggle");if(bt)bt.onclick=()=>{draft.biotope=!draft.biotope;document.getElementById("fieldsArea").innerHTML=fieldsArea();wireFields();};}
+function updateDepthBio(){const box=document.querySelector(".bio-mini svg");if(box){const lvl=clamp(Number(draft.depth||0)/60,.05,1);box.outerHTML=bioSVG(lvl,"neutral",60,"d");}}
+function initPickMap(){const el=document.getElementById("pickMap");if(!el)return;
+  if(!window.L){el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px">지도를 불러오지 못했어요.<br>위·경도를 직접 입력하거나 GPS 버튼을 눌러요.</div>`;return;}
+  const c=state.draftLoc?[state.draftLoc.lat,state.draftLoc.lon]:[state.site.lat,state.site.lon];
+  state.pickMap=L.map(el,{zoomControl:true}).setView(c,16);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(state.pickMap);
+  state.pickMarker=L.marker(c,{draggable:true}).addTo(state.pickMap);
+  state.pickMap.on("click",e=>setDraftLoc(e.latlng.lat,e.latlng.lng,null,"manual"));
+  state.pickMarker.on("dragend",e=>{const p=e.target.getLatLng();setDraftLoc(p.lat,p.lng,null,"manual");});
+  setTimeout(()=>state.pickMap.invalidateSize(),120);}
+async function saveObservation(){const f=state.category;
+  const ok=f==="water"?(draft.depth||draft.turbidity||draft.note):f==="soil"?(draft.soiltype||draft.soilcolor||draft.note):(draft.species||draft.note||state.photo);
+  if(!ok){toast("관찰한 내용을 조금만 적어줄래요? 🌱");return;}
+  const obs={id:uid(),ts:Date.now(),category:f,who:state.who,site:state.site.name,location:state.draftLoc?{...state.draftLoc}:siteLoc(),
+    fields:{...draft},photo:state.photo,ai:state.aiRes,
+    weather:state.weather?{temp:state.weather.temperature_2m,humidity:state.weather.relative_humidity_2m,precip:state.weather.precipitation,wind:state.weather.wind_speed_10m,code:state.weather.weather_code}:null};
+  state.observations.unshift(obs);await store.set("wsp_obs_"+obs.id,obs,true);
+  draft=emptyDraft();state.photo=null;state.aiRes=null;state.aiState="idle";state.draftLoc=siteLoc();
+  renderHeroBio();renderView();renderNav();toast("비오가 기록을 저장했어요! 🌿");}
+
+/* ===== 도감/사진전 뷰 ===== */
+function dexView(){return `
+  <div class="seg"><button data-dex="gallery" class="${state.dexTab==='gallery'?'on':''}">🖼️ 우리 사진전</button>
+    <button data-dex="ref" class="${state.dexTab==='ref'?'on':''}">📚 참고 도감</button></div>
+  ${state.dexTab==="gallery"?galleryView():refView()}`;}
+function galleryView(){
+  const specs=state.observations.filter(o=>o.photo&&(o.category==="animal"||o.category==="plant"||o.category==="etc"));
+  let h=state.readonly?"":`<div class="card"><div class="card-title"><span class="em">📸</span> AI로 생물 추가<span class="r">촬영: ${state.who}</span></div>
+    ${bioGuide("찰칵! 사진을 찍으면 내가 이름을 찾아볼게 📸")}
+    <div id="qPhotoArea">${qPhotoArea()}</div><input type="file" id="qFileIn" accept="image/*" capture="environment" class="hidden"><input type="file" id="qFileInGal" accept="image/*" class="hidden"><div id="qAiArea">${qAiArea()}</div>
+    <div class="field" style="margin-top:12px"><label>종 이름</label><input id="q_species" placeholder="AI 결과 또는 직접 입력" value="${esc(state.qSpecies)}"></div>
+    <div class="field"><label>분류</label><div class="pills">${["animal","plant","etc"].map(c=>`<button type="button" class="pill ${state.qCat===c?'on':''}" data-qcat="${c}">${CATS[c].emoji} ${CATS[c].full}</button>`).join("")}</div></div>
+    <div class="field" style="margin-bottom:0"><label>메모 (선택)</label><input id="q_note" placeholder="관찰 장소·특징" value="${esc(state.qNote)}"></div>
+    <button class="save-btn" id="qSave" style="margin-top:14px">🖼️ 사진전에 추가</button>
+    <p style="font-size:11px;color:var(--muted);margin:9px 2px 0">위치는 ${state.site.name} 기준으로 저장돼요. 정밀 GPS는 ‘기록’ 탭에서 남길 수 있어요.</p></div>`;
+  h+=`<div class="card-title" style="padding:0 2px"><span class="em">🦋</span> 우리 팀 생물 사진전 <span class="r">${specs.length}종 수집</span></div>`;
+  if(!specs.length)h+=`<div class="empty">${bioSVG(.55,"happy",96,"g")}<p>아직 사진이 없어요.<br>위에서 첫 생물을 추가해 사진전을 채워요!</p></div>`;
+  else{h+=`<div class="gal">${specs.map(o=>{const f=o.fields||{};return `<div class="gcell" data-open="${o.id}">
+    <img class="gimg" src="${o.photo}"><div class="gbody"><div class="gname">${esc(f.species||f.title||CATS[o.category].full)}</div>
+    <div class="gmeta"><span class="gwho" style="color:${whoDot(o.who)}">${esc(o.who||"")}</span>· ${new Date(o.ts).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric"})} · ${esc(o.site||"")}</div></div></div>`;}).join("")}</div>`;
+    h+=`<button class="exhibit-btn" id="exhibitBtn">🎨 디지털 사진전 페이지 만들기</button>`;}
+  return h;}
+function qPhotoArea(){if(!state.qPhoto)return `<div class="photo-drop"><span class="big">📸</span><b>생물 사진 올리기</b>
+    <div class="pickbtns"><button class="pickbtn cam" id="qCam">📷 사진 찍기</button><button class="pickbtn alb" id="qAlb">🖼️ 앨범에서 고르기</button></div></div>`;
+  return `<div class="photo-wrap"><img src="${state.qPhoto}" data-zoom="${state.qPhoto}"><button class="photo-x" id="qRm">✕</button></div>`;}
+function qAiArea(){if(!state.qPhoto)return"";
+  let h=`<button class="ai-btn" id="qAiBtn" ${state.qAiState==='loading'?'disabled':''}>${state.qAiState==='loading'?'🔎 종을 분석하는 중…':'🔎 AI로 종 자동 찾기'}</button>`;
+  if(state.qAiState==="error")h+=`<div class="ai-note">AI 종 찾기는 Claude 앱 안에서 동작해요. 종 이름은 직접 적을 수 있어요 🙂</div>`;
+  if(state.qAiState==="ok"&&state.qAiRes){const r=state.qAiRes;h+=`<div class="ai-res ${r.identified?'':'dim'}">`;
+    if(r.identified){h+=`<div class="ai-top"><b>${esc(r.common_name)}</b><span class="conf c-${r.confidence}">${esc(r.confidence)}</span></div>`;
+      if(r.scientific_name)h+=`<div class="ai-sci">${esc(r.scientific_name)} · ${esc(r.group)}</div>`;if(r.features)h+=`<p>${esc(r.features)}</p>`;
+      if(r.indicator)h+=`<p class="ai-ind">🌊 ${esc(r.indicator)}</p>`;h+=dexLinksHTML(r.common_name);h+=`<button class="apply-btn" id="qApply">✓ 종 이름으로 넣기</button>`;}
+    else h+=`<b>정확한 식별이 어려워요</b><p>${esc(r.features)}</p>`;h+=`<div class="disc">AI 추정 결과예요. 도감으로 꼭 교차 확인해요!</div></div>`;}
+  return h;}
+function refView(){return DEX_REF.map(g=>`<div class="refgroup"><h4>${g.emoji} ${g.group} <span class="rcount">${g.items.length}</span></h4>
+  ${g.items.map(it=>{const q=encodeURIComponent(it.name);const cat=g.group.startsWith("풀")?"plant":"animal";
+    const tc=it.tag&&it.tag.includes("외래")?"#E0567A":it.tag&&it.tag.includes("멸종")?"#E8912F":it.tag&&(it.tag.includes("지표")||it.tag.includes("청정")||it.tag.includes("양호")||it.tag.includes("정화"))?"#3E9E7A":"#8AA0D8";
+    return `<div class="refitem"><div class="rn">${it.name}${it.tag?`<span class="rtag" style="background:${tc}">${it.tag}</span>`:""}</div><div class="rnote">${it.note}</div>
+    <div class="ract"><a href="https://search.naver.com/search.naver?query=${q}" target="_blank" rel="noopener">📖 네이버</a>
+      <a href="https://www.google.com/search?tbm=isch&q=${q}" target="_blank" rel="noopener">🖼️ 이미지</a>
+      <button class="addref" data-refadd="${esc(it.name)}" data-refcat="${cat}">＋ 이 종으로 추가</button></div></div>`;}).join("")}</div>`).join("")
+  +`<p style="font-size:11.5px;color:var(--muted);text-align:center;padding:6px 12px 0;line-height:1.6">장지천·창곡천이 흘러드는 <b>탄천 수계</b>와 이런 도시하천에서 관찰될 수 있는 대표 생물이에요.<br>실제 관찰로 우리만의 도감을 채워봐요! 🌱</p>`;}
+function wireDex(){
+  document.querySelectorAll("[data-dex]").forEach(b=>b.onclick=()=>{state.dexTab=b.dataset.dex;renderView();});
+  wireQPick();
+  const onQ=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{state.qPhoto=await processImage(f);state.qAiState="idle";state.qAiRes=null;refreshQ();}catch(_){toast("사진을 불러오지 못했어요");}e.target.value="";};
+  const qf=document.getElementById("qFileIn");if(qf)qf.onchange=onQ;
+  const qfg=document.getElementById("qFileInGal");if(qfg)qfg.onchange=onQ;
+  wireQAI();
+  const qs=document.getElementById("q_species");if(qs)qs.oninput=e=>state.qSpecies=e.target.value;
+  const qn=document.getElementById("q_note");if(qn)qn.oninput=e=>state.qNote=e.target.value;
+  document.querySelectorAll("[data-qcat]").forEach(b=>b.onclick=()=>{state.qCat=b.dataset.qcat;refreshQFields();});
+  const sv=document.getElementById("qSave");if(sv)sv.onclick=saveSpeciesEntry;
+  const ex=document.getElementById("exhibitBtn");if(ex)ex.onclick=exportExhibit;
+  document.querySelectorAll("[data-open]").forEach(c=>c.onclick=()=>openGalleryDetail(c.dataset.open));
+  document.querySelectorAll("[data-refadd]").forEach(b=>b.onclick=()=>{state.qSpecies=b.dataset.refadd;state.qCat=b.dataset.refcat;state.dexTab="gallery";renderView();toast("빠른 추가에 넣었어요 ✏️");window.scrollTo({top:0,behavior:"smooth"});});}
+function refreshQ(){document.getElementById("qPhotoArea").innerHTML=qPhotoArea();document.getElementById("qAiArea").innerHTML=qAiArea();
+  wireQPick();wireQAI();wireZoom();}
+function wireQPick(){const c=document.getElementById("qCam");if(c)c.onclick=()=>document.getElementById("qFileIn").click();
+  const a=document.getElementById("qAlb");if(a)a.onclick=()=>document.getElementById("qFileInGal").click();
+  const r=document.getElementById("qRm");if(r)r.onclick=()=>{state.qPhoto=null;state.qAiRes=null;state.qAiState="idle";refreshQ();};}
+function refreshQFields(){document.querySelectorAll("[data-qcat]").forEach(b=>b.classList.toggle("on",b.dataset.qcat===state.qCat));}
+function wireQAI(){const b=document.getElementById("qAiBtn");
+  if(b)b.onclick=async()=>{if(!state.qPhoto)return;state.qAiState="loading";refreshQ();
+    try{const r=await identifySpecies(state.qPhoto,state.qCat);state.qAiRes=r;state.qAiState="ok";if(r.identified&&r.common_name){state.qSpecies=r.common_name;const g=(r.group||"");state.qCat=g==="식물"?"plant":(g==="기타"?"etc":"animal");}}
+    catch(e){state.qAiState="error";}refreshQ();const qs=document.getElementById("q_species");if(qs)qs.value=state.qSpecies;refreshQFields();};
+  const ap=document.getElementById("qApply");if(ap)ap.onclick=()=>{state.qSpecies=state.qAiRes.common_name;const qs=document.getElementById("q_species");if(qs)qs.value=state.qSpecies;toast("종 이름을 넣었어요 ✓");};}
+async function saveSpeciesEntry(){
+  if(!state.qSpecies&&!state.qPhoto){toast("사진을 넣거나 종 이름을 적어줘요 🌱");return;}
+  const obs={id:uid(),ts:Date.now(),category:state.qCat,who:state.who,site:state.site.name,location:siteLoc(),
+    fields:{...emptyDraft(),species:state.qSpecies,note:state.qNote},photo:state.qPhoto,ai:state.qAiRes,
+    weather:state.weather?{temp:state.weather.temperature_2m,humidity:state.weather.relative_humidity_2m,precip:state.weather.precipitation,wind:state.weather.wind_speed_10m,code:state.weather.weather_code}:null};
+  state.observations.unshift(obs);await store.set("wsp_obs_"+obs.id,obs,true);
+  state.qPhoto=null;state.qAiRes=null;state.qAiState="idle";state.qSpecies="";state.qNote="";
+  renderView();renderNav();toast("사진전에 추가했어요! 🖼️");}
+function openGalleryDetail(id){const o=state.observations.find(x=>x.id===id);if(!o)return;const f=o.fields||{};
+  const ov=document.getElementById("overlay");
+  ov.innerHTML=`<div class="zoom" id="zc"><img src="${o.photo}"><div class="zmeta">
+    <b>${esc(f.species||f.title||CATS[o.category].full)}</b>${o.ai&&o.ai.scientific_name?`<div class="zsci">${esc(o.ai.scientific_name)}</div>`:""}
+    <p>${CATS[o.category].emoji} ${CATS[o.category].full} · 촬영 ${esc(o.who||"")} · ${dayKey(o.ts)} · ${esc(o.site||"")}</p>
+    ${o.ai&&o.ai.indicator?`<p>🌊 ${esc(o.ai.indicator)}</p>`:""}${f.note?`<p>${esc(f.note)}</p>`:""}
+    ${dexLinksHTML(f.species||"")}</div></div>`;
+  document.getElementById("zc").onclick=e=>{if(e.target.tagName!=="A")ov.innerHTML="";};}
+
+/* ===== 일지 ===== */
+async function loadAllObs(){const map={};
+  for(const sh of [true,false]){let keys=[];try{keys=await store.list("wsp_obs_",sh);}catch(e){}
+    for(const k of keys){try{const v=await store.get(k,sh);if(v)map[v.id]=v;}catch(e){}}}
+  state.observations=Object.values(map).sort((a,b)=>b.ts-a.ts);}
+async function reloadObs(){await loadAllObs();renderHeroBio();renderNav();}
+function teamDashboard(){
+  const total=state.observations.length;
+  const counts=WHO.map(w=>({w,n:state.observations.filter(o=>o.who===w).length}));
+  const chips=[["","전체"]].concat(WHO.map(w=>[w,w])).map(([val,label])=>{const on=(state.filterWho||"")===val;return `<button class="fchip ${on?'on':''}" data-fw="${val}">${label}</button>`;}).join("");
+  return `<div class="card"><div class="card-title"><span class="em">📊</span> 팀 대시보드<span class="r">함께 보는 기록 ${total}건</span></div>
+    ${bioGuide("최영현·박현정·이정연이 올린 걸 여기서 다 같이 봐요! 🤝")}
+    <div class="dash-grid">${counts.map(c=>`<div class="dash-cell"><span class="dot" style="background:${whoDot(c.w)}"></span><b>${c.n}</b><span>${esc(c.w)}</span></div>`).join("")}
+      <div class="dash-cell"><span class="se">🖼️</span><b>${state.observations.filter(o=>o.photo).length}</b><span>사진</span></div></div>
+    <div class="fchips">${chips}</div>
+    <button class="dash-refresh" id="dashRefresh">🔄 새로고침 · 팀 기록 불러오기</button></div>`;}
+function wireLog(){
+  document.querySelectorAll("[data-fw]").forEach(b=>b.onclick=()=>{state.filterWho=b.dataset.fw||null;renderView();});
+  const r=document.getElementById("dashRefresh");if(r)r.onclick=async()=>{r.textContent="⏳ 불러오는 중…";await reloadObs();renderView();toast("팀 기록을 새로고침했어요 🔄");};}
+function logView(){const dash=teamDashboard();
+  if(!state.observations.length)return dash+`<div class="empty">${bioSVG(.35,"sad",120,"e")}<p>아직 기록이 없어요.<br>기록을 올리면 팀원 모두가 여기서 볼 수 있어요!</p></div>`;
+  const list0=state.filterWho?state.observations.filter(o=>o.who===state.filterWho):state.observations;
+  const g={};list0.forEach(o=>{(g[dayKey(o.ts)]=g[dayKey(o.ts)]||[]).push(o);});
+  const body=Object.entries(g).map(([d,list])=>`<div class="day-head"><b>${d}</b><small>${list.length}건</small></div>`+list.map(logCard).join("")).join("");
+  return dash+(body||`<div class="empty" style="padding:26px">${esc(state.filterWho||"")} 님의 기록이 아직 없어요 🙂</div>`);}
+function logCard(o){const f=o.fields||{},C=CATS[o.category]||{};
+  const detail=[f.depth&&`수심 ${f.depth}cm`,f.turbidity,f.watertemp&&`수온 ${f.watertemp}℃`,f.flow&&`유속 ${f.flow}`,f.count,f.position,f.behavior,f.soiltype&&`토양 ${f.soiltype}`,f.soilcolor,f.soilmoist&&`습도 ${f.soilmoist}`].filter(Boolean).join(" · ");
+  return `<div class="log">${o.photo?`<img class="thumb" src="${o.photo}" data-zoom="${o.photo}">`:""}
+    <div class="log-b"><div class="log-top"><span class="tag" style="background:${C.color}">${C.emoji} ${C.label}</span>
+      <b>${esc(f.species||f.title||C.full)}</b>${state.readonly?"":`<button class="del" data-del="${o.id}">🗑️</button>`}</div>
+      ${o.ai&&o.ai.scientific_name?`<div class="log-sci">${esc(o.ai.scientific_name)}</div>`:""}
+      <div class="log-meta">${hhmm(o.ts)} · ${esc(o.site)}${o.who?` · <b style="color:${whoDot(o.who)}">${esc(o.who)}</b>`:""}${o.weather?` · ${wicon(o.weather.code)} ${Math.round(o.weather.temp)}℃`:""}</div>
+      ${detail?`<div class="log-detail">${esc(detail)}</div>`:""}${f.note?`<div class="log-note">${esc(f.note)}</div>`:""}
+      ${f.reflection?`<div class="log-soga">💭 ${esc(f.reflection)}</div>`:""}
+      ${o.ai&&o.ai.indicator?`<div class="log-note" style="color:#3E7CA6">🌊 ${esc(o.ai.indicator)}</div>`:""}
+      ${o.location?`<div class="log-loc">📍 ${esc(o.site||"발견 위치")} · <a href="https://www.google.com/maps?q=${o.location.lat},${o.location.lon}" target="_blank" rel="noopener">지도에서 보기 ↗</a></div>`:""}
+      ${f.biotope?`<div class="log-bio">🌱 비오톱 후보종</div>`:""}</div></div>`;}
+function wireZoom(){document.querySelectorAll("[data-zoom]").forEach(el=>el.onclick=()=>{const o=document.getElementById("overlay");
+    o.innerHTML=`<div class="zoom"><img src="${el.dataset.zoom}"></div>`;o.querySelector(".zoom").onclick=()=>o.innerHTML="";});
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{const id=b.dataset.del;state.observations=state.observations.filter(o=>o.id!==id);await store.del("wsp_obs_"+id,true);await store.del("wsp_obs_"+id,false);renderView();renderNav();renderHeroBio();});}
+
+/* ===== 지도 ===== */
+function mapView(){
+  const pts=state.observations.filter(o=>o.location);
+  const jang=pts.filter(o=>o.site==="장지천").length, chang=pts.filter(o=>o.site==="창곡천").length;
+  const species=new Set(pts.map(o=>(o.fields&&o.fields.species)||"").filter(Boolean)).size;
+  const legend=CAT_ORDER.map(c=>`<span class="lg"><i style="background:${CATS[c].color}"></i>${CATS[c].emoji}${CATS[c].label}</span>`).join("");
+  const list=pts.slice(0,80).map(o=>{const f=o.fields||{};const C=CATS[o.category];
+    return `<div class="spot" data-focus="${o.id}">${o.photo?`<img src="${o.photo}">`:`<span class="spe" style="background:${C.color}22">${C.emoji}</span>`}
+      <div class="spb"><b>${esc(f.species||f.title||C.full)}</b><small>${esc(o.site||"")} · ${new Date(o.ts).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric"})} · ${esc(o.who||"")}</small></div><span class="sgo">지도 ›</span></div>`;}).join("");
+  return `<div class="card" style="padding:12px">
+    <div class="card-title"><span class="em">🗺️</span> 우리가 탐사한 곳 · 생물이 사는 곳</div>
+    ${bioGuide("우리가 다닌 곳이 다 여기 모여! 핀을 누르면 그때 만난 친구가 나와 🐾")}
+    <div class="mapsum"><div><b>${pts.length}</b><span>발견 위치</span></div><div><b>${species}</b><span>종</span></div><div><b>${jang}</b><span>장지천</span></div><div><b>${chang}</b><span>창곡천</span></div></div>
+    <div class="legend">${legend}</div>
+    <div id="mapView"></div>
+    <div class="spotlist">${pts.length?list:`<div class="empty" style="padding:22px">아직 위치가 기록된 관찰이 없어요.<br>‘기록’ 탭에서 발견 위치를 찍어 우리 지도를 채워요 📍</div>`}</div></div>`;}
+function initViewMap(){const el=document.getElementById("mapView");if(!el)return;state.viewMarkers={};
+  if(!window.L){el.innerHTML=`<div style="padding:30px;text-align:center;color:var(--muted)">지도를 불러오지 못했어요. 네트워크를 확인해요.</div>`;return;}
+  state.viewMap=L.map(el).setView([37.4744,127.1445],15);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(state.viewMap);
+  const pts=state.observations.filter(o=>o.location);const group=[];
+  pts.forEach(o=>{const C=CATS[o.category]||{};const f=o.fields||{};
+    const m=L.circleMarker([o.location.lat,o.location.lon],{radius:10,color:"#fff",weight:3,fillColor:C.color,fillOpacity:1}).addTo(state.viewMap);
+    m.bindPopup(`<div style="width:158px"><div style="font-weight:700;color:#2E3A59">${C.emoji} ${esc(f.species||f.title||C.full)}</div>
+      <div style="font-size:11px;color:#8A93AD;margin:2px 0">${dayKey(o.ts)} · 촬영 ${esc(o.who||"")}</div>
+      ${o.photo?`<img src="${o.photo}" style="width:100%;border-radius:8px;margin-top:3px">`:""}
+      <a href="https://www.google.com/maps?q=${o.location.lat},${o.location.lon}" target="_blank" style="font-size:11px;color:#5AA9E6;font-weight:700">지도로 열기 ↗</a></div>`);
+    state.viewMarkers[o.id]=m; group.push([o.location.lat,o.location.lon]);});
+  if(group.length)state.viewMap.fitBounds(group,{padding:[40,40],maxZoom:17});
+  document.querySelectorAll("[data-focus]").forEach(s=>s.onclick=()=>{const m=state.viewMarkers[s.dataset.focus];if(m){state.viewMap.setView(m.getLatLng(),18);m.openPopup();el.scrollIntoView({behavior:"smooth",block:"center"});}});
+  setTimeout(()=>state.viewMap.invalidateSize(),120);}
+
+/* ===== 내보내기 ===== */
+function exportView(){const stats=CAT_ORDER.map(c=>({c,n:state.observations.filter(o=>o.category===c).length}));
+  const bio=state.observations.filter(o=>o.fields&&o.fields.biotope).length;const geo=state.observations.filter(o=>o.location).length;
+  return `<div class="card"><div class="card-title"><span class="em">📊</span> 우리 팀의 기록</div>
+    <div class="stat-grid">${stats.map(({c,n})=>`<div class="stat"><span class="se">${CATS[c].emoji}</span><b>${n}</b><span>${CATS[c].label}</span></div>`).join("")}
+      <div class="stat"><span class="se">🌱</span><b>${bio}</b><span>비오톱 후보</span></div><div class="stat"><span class="se">📍</span><b>${geo}</b><span>위치 기록</span></div></div></div>
+    <div class="card"><div class="card-title"><span class="em">📤</span> 파일로 내보내기</div>
+      <p class="exp-desc">수위·수질·생물·위치·소감 기록을 파일로 저장해 계절별 변화 분석이나 발표 자료로 써요.</p>
+      <button class="exp-btn" id="expExhibit" ${state.observations.some(o=>o.photo)?'':'disabled'}><span class="ee">🎨</span><div><b>디지털 사진전 (HTML)</b><small>촬영한 생물 갤러리 · 발표/전시용</small></div></button>
+      <button class="exp-btn" id="expCSV" ${state.observations.length?'':'disabled'}><span class="ee">📈</span><div><b>CSV (표 데이터)</b><small>엑셀에서 수위·수온 변화 분석 · GPS 포함</small></div></button>
+      <button class="exp-btn" id="expReport" ${state.observations.length?'':'disabled'}><span class="ee">📄</span><div><b>탐사 리포트 (HTML · 인쇄용)</b><small>사진·소감·지도링크 포함</small></div></button>
+      <button class="exp-btn" id="expJSON" ${state.observations.length?'':'disabled'}><span class="ee">💾</span><div><b>전체 백업 (JSON)</b><small>사진 포함 원본 데이터</small></div></button></div>
+    <div class="foot">${bioSVG(.6,"happy",70,"x")}<br>물과 풀, 새가 어우러진 습지를 지키는 우리가 될 거예요! 💙💚</div>`;}
+function wireExport(){const ex=document.getElementById("expExhibit"),cs=document.getElementById("expCSV"),rp=document.getElementById("expReport"),js=document.getElementById("expJSON");
+  if(ex)ex.onclick=exportExhibit;if(cs)cs.onclick=exportCSV;if(rp)rp.onclick=exportReport;
+  if(js)js.onclick=()=>download(`물새풀_백업_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(state.observations,null,2),"application/json");}
+function download(name,content,type){const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);}
+function exportCSV(){
+  const head=["일시","지점","위도","경도","위치정확도(m)","위치기록","관찰자","분류","종명","AI학명","AI신뢰도","수심(cm)","탁도","수온","유속","개체수","위치/행동","토양","토색","토양습도","기온","습도(%)","강수","풍속","날씨","비오톱후보","메모","소감"];
+  const rows=state.observations.map(o=>{const f=o.fields||{},w=o.weather,L=o.location;
+    return [new Date(o.ts).toLocaleString("ko-KR"),o.site||"",L?L.lat:"",L?L.lon:"",L&&L.accuracy?L.accuracy:"",L?L.source:"",o.who||"",CATS[o.category].full,f.species||"",o.ai?o.ai.scientific_name:"",o.ai?o.ai.confidence:"",
+      f.depth||"",f.turbidity||"",f.watertemp||"",f.flow||"",f.count||"",f.position||f.behavior||"",f.soiltype||"",f.soilcolor||"",f.soilmoist||"",
+      w?w.temp:"",w?w.humidity:"",w?w.precip:"",w?w.wind:"",w?wtext(w.code):"",f.biotope?"O":"",(f.note||f.title||"").replace(/\n/g," "),(f.reflection||"").replace(/\n/g," ")]
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");});
+  download(`물새풀_데이터_${new Date().toISOString().slice(0,10)}.csv`,"\uFEFF"+head.join(",")+"\n"+rows.join("\n"),"text/csv;charset=utf-8;");}
+function exportReport(){const byDate={};state.observations.slice().sort((a,b)=>a.ts-b.ts).forEach(o=>{(byDate[dayKey(o.ts)]=byDate[dayKey(o.ts)]||[]).push(o);});
+  const sections=Object.entries(byDate).map(([d,list])=>{const cards=list.map(o=>{const f=o.fields||{},w=o.weather,C=CATS[o.category];
+    const det=[f.depth&&`수심 ${f.depth}cm`,f.turbidity,f.watertemp&&`수온 ${f.watertemp}℃`,f.flow&&`유속 ${f.flow}`,f.count,f.position,f.behavior,f.soiltype&&`토양 ${f.soiltype}`,f.soilcolor,f.soilmoist&&`습도 ${f.soilmoist}`].filter(Boolean).join(" · ");
+    return `<div class="c">${o.photo?`<img src="${o.photo}"/>`:""}<div class="b"><span class="tag" style="background:${C.color}">${C.emoji} ${C.full}</span><b>${esc(f.species||f.title||C.full)}</b>
+      ${o.ai&&o.ai.scientific_name?`<i>${esc(o.ai.scientific_name)}</i>`:""}<div class="m">${hhmm(o.ts)} · ${esc(o.site)} · 촬영 ${esc(o.who||"")}${w?` · ${wtext(w.code)} ${w.temp}℃`:""}</div>
+      ${det?`<div class="d">${esc(det)}</div>`:""}${f.note?`<div class="n">${esc(f.note)}</div>`:""}
+      ${f.reflection?`<div class="soga">💭 ${esc(f.reflection)}</div>`:""}${o.ai&&o.ai.indicator?`<div class="ind">🌊 ${esc(o.ai.indicator)}</div>`:""}
+      ${o.location?`<div class="loc">📍 ${o.location.lat}, ${o.location.lon} · <a href="https://www.google.com/maps?q=${o.location.lat},${o.location.lon}">Google 지도</a></div>`:""}
+      ${f.biotope?`<div class="bio">🌱 비오톱 후보종</div>`:""}</div></div>`;}).join("");return `<h2>${d} <small>(${list.length}건)</small></h2>${cards}`;}).join("");
+  const html=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>물새풀팀 탐사 리포트</title>
+  <style>body{font-family:system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:820px;margin:0 auto;padding:32px;color:#3A4468;background:#FBF7F0}
+  h1{color:#2E3A59;border-bottom:3px solid #8FC66B;padding-bottom:10px}h2{color:#2E3A59;border-left:4px solid #5AA9E6;padding-left:10px;margin-top:30px}small{color:#8A93AD;font-weight:400}
+  .meta{color:#8A93AD;margin-bottom:8px}.c{display:flex;gap:14px;background:#fff;border:1px solid #E9EEF6;border-radius:16px;padding:12px;margin:12px 0}
+  .c img{width:120px;height:120px;object-fit:cover;border-radius:10px;flex:none}.b{flex:1}.tag{color:#fff;font-size:11px;padding:2px 9px;border-radius:12px;margin-right:6px}
+  .b b{font-size:16px}.b i{color:#8A93AD;margin-left:6px}.m{color:#8A93AD;font-size:13px;margin:4px 0}.d{font-size:13px;color:#3E86C7;margin:4px 0}
+  .n{margin-top:6px}.soga{margin-top:6px;color:#8A6BA8;background:#FBF6FC;padding:6px 8px;border-radius:8px;font-size:13px}
+  .ind{margin-top:6px;font-size:13px;color:#3E7CA6;background:#EAF5FB;padding:6px 8px;border-radius:8px}.loc{margin-top:6px;font-size:12px}.loc a{color:#EFA127}
+  .bio{margin-top:6px;color:#6FA84C;font-size:13px}@media print{.c{break-inside:avoid}}</style></head>
+  <body><h1>🐦 물새풀팀 · 비오의 탐사 리포트</h1><div class="meta">현정 · 영현 · 총 ${state.observations.length}건 · 생성 ${new Date().toLocaleDateString("ko-KR")}</div>
+  ${sections||"<p>기록이 없습니다.</p>"}</body></html>`;
+  download(`물새풀_리포트_${new Date().toISOString().slice(0,10)}.html`,html,"text/html;charset=utf-8;");}
+function exportExhibit(){const specs=state.observations.filter(o=>o.photo);
+  if(!specs.length){toast("사진이 있는 기록이 필요해요 📸");return;}
+  const cards=specs.map(o=>{const f=o.fields||{};return `<figure><img src="${o.photo}"/><figcaption>
+    <b>${esc(f.species||f.title||CATS[o.category].full)}</b>${o.ai&&o.ai.scientific_name?`<i>${esc(o.ai.scientific_name)}</i>`:""}
+    <span class="cr">${CATS[o.category].emoji} 촬영 ${esc(o.who||"")} · ${new Date(o.ts).toLocaleDateString("ko-KR")} · ${esc(o.site||"")}</span>
+    ${o.ai&&o.ai.indicator?`<p>🌊 ${esc(o.ai.indicator)}</p>`:""}</figcaption></figure>`;}).join("");
+  const uniq=new Set(specs.map(o=>(o.fields&&o.fields.species)||"")); uniq.delete("");
+  const html=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>물새풀팀 디지털 생물다양성 사진전</title>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <style>body{font-family:'Gowun Dodum',sans-serif;margin:0;background:linear-gradient(180deg,#EAF4FC,#FBF7F0);color:#3A4468}
+  .hd{text-align:center;padding:40px 20px 24px}.hd h1{font-family:'Jua',sans-serif;font-size:32px;color:#2E3A59;margin:0 0 8px}
+  .hd p{color:#5B6a86;margin:4px 0}.hd .sub{color:#8A93AD;font-size:14px}
+  .grid{max-width:1000px;margin:0 auto;padding:10px 18px 60px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+  figure{margin:0;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 22px rgba(90,120,170,.16)}
+  figure img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+  figcaption{padding:12px 14px}figcaption b{font-size:16px;color:#2E3A59;display:block}figcaption i{color:#8A93AD;font-size:12px}
+  figcaption .cr{display:block;color:#8A93AD;font-size:11.5px;margin-top:6px}figcaption p{font-size:12px;color:#3E7CA6;background:#EAF5FB;padding:6px 8px;border-radius:8px;margin:8px 0 0}
+  .ft{text-align:center;color:#8A93AD;font-size:12px;padding:24px}</style></head>
+  <body><div class="hd"><h1>🖼️ 물새풀팀 디지털 생물다양성 사진전</h1>
+  <p>위례 장지천·창곡천 습지에서 만난 생명들</p><p class="sub">현정 · 영현 · 총 ${specs.length}점 · ${uniq.size}종 · ${new Date().toLocaleDateString("ko-KR")}</p></div>
+  <div class="grid">${cards}</div><div class="ft">🌱 물과 풀, 새가 어우러진 습지를 지키는 우리가 될 거예요 · 마스코트 비오와 함께</div></body></html>`;
+  download(`물새풀_사진전_${new Date().toISOString().slice(0,10)}.html`,html,"text/html;charset=utf-8;");
+  toast("디지털 사진전 페이지를 만들었어요! 🎨");}
+
+/* ===== 로그인 게이트 ===== */
+function renderGate(){const g=document.getElementById("gate");g.className="";
+  g.innerHTML=`<div class="gate-card" id="gateCard">
+    <div class="gate-bio">${bioSVG(.62,"happy",118,"login",true)}</div>
+    <div class="gate-title">물새풀팀 · 비오의 기록지</div>
+    <div class="gate-sub">비오와 함께 습지를 탐구해요 🌿</div>
+    <div class="seg gate-seg"><button data-lm="editor" class="${state.loginMode==='editor'?'on':''}">✏️ 팀원 (편집)</button><button data-lm="guest" class="${state.loginMode==='guest'?'on':''}">👀 손님 (둘러보기)</button></div>
+    ${state.loginMode==='editor'?`
+      <div class="gate-names">${WHO.map(n=>`<button data-ln="${n}" class="gate-name ${state.loginName===n?'on':''}">${n}</button>`).join("")}</div>
+      <input id="pwIn" class="gate-pw" type="password" inputmode="numeric" maxlength="4" placeholder="● ● ● ●" value="${esc(state.loginPw)}">
+      <button class="gate-go" id="gateGo">🔑 입장해서 편집하기</button>
+      <div class="gate-msg" id="gateMsg"></div>`
+    :`<p class="gate-guestmsg">손님은 우리 팀의 기록과 사진전을 둘러볼 수 있어요.<br>편집·저장은 팀원(최영현·박현정·이정연)만 가능해요 🙂</p>
+      <button class="gate-go guest" id="gateGuest">👀 둘러보기로 입장하기</button>`}
+  </div>`;
+  wireGate();}
+function wireGate(){
+  document.querySelectorAll("[data-lm]").forEach(b=>b.onclick=()=>{state.loginMode=b.dataset.lm;renderGate();});
+  document.querySelectorAll("[data-ln]").forEach(b=>b.onclick=()=>{state.loginName=b.dataset.ln;renderGate();});
+  const pw=document.getElementById("pwIn");if(pw){pw.oninput=e=>state.loginPw=e.target.value;pw.onkeydown=e=>{if(e.key==="Enter")tryLogin();};}
+  const go=document.getElementById("gateGo");if(go)go.onclick=tryLogin;
+  const gg=document.getElementById("gateGuest");if(gg)gg.onclick=()=>enter("guest",null);}
+function tryLogin(){const msg=document.getElementById("gateMsg");
+  if(!WHO.includes(state.loginName)){if(msg)msg.textContent="이름을 먼저 골라줘!";return;}
+  if(state.loginPw!=="2144"){if(msg)msg.textContent="비밀번호가 달라요 🥺";const c=document.getElementById("gateCard");c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake");return;}
+  enter("editor",state.loginName);}
+function enter(role,name){state.auth={role,name};state.readonly=role==="guest";if(name)state.who=name;
+  state.tab=role==="guest"?"dex":"record";state.dexTab="gallery";state.loginPw="";
+  document.getElementById("gate").className="gone";
+  renderSiteTabs();renderUserBar();renderNav();renderView();}
+function renderUserBar(){const el=document.getElementById("userbar");if(!el)return;
+  if(!state.auth){el.innerHTML="";return;}const ed=state.auth.role==="editor";
+  el.innerHTML=`<span class="ub-who">${ed?`✏️ ${esc(state.auth.name)} · 편집 모드`:"👀 손님 · 둘러보기 모드"}</span>
+    <button class="ub-switch" id="ubSwitch">${ed?"나가기":"팀원으로 입장"}</button>`;
+  document.getElementById("ubSwitch").onclick=()=>{state.loginMode="editor";document.getElementById("gate").className="";renderGate();};}
+
+/* ===== 초기화 ===== */
+async function init(){renderSiteTabs();renderHeroBio();renderNav();
+  const meta=await store.get("wsp_meta");if(meta&&meta.who&&WHO.includes(meta.who)){state.who=meta.who;renderSiteTabs();}
+  await loadAllObs();state.loaded=true;
+  state.draftLoc=siteLoc();renderHeroBio();renderView();renderNav();renderUserBar();renderGate();loadWeather();}
+init();
+</script>
+</body>
+</html>
